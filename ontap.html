@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trắc nghiệm Nhập môn CNTT</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --card: #0f1418;
+      --muted: #9aa5b1;
+      --accent: #58a6ff;
+      --ok: #00d27a;
+      --bad: #ff6b6b;
+      --btn: #2f9bff;
+    }
+
+    body {
+      background: var(--bg);
+      color: #e6eef6;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 18px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin: 6px 0 18px;
+      font-weight: 600;
+    }
+
+    #quiz {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .question {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .question h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .option {
+      display: block;
+      margin: 6px 0;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    input[type="radio"] {
+      margin-right: 8px;
+      transform: scale(1.05)
+    }
+
+    #nav {
+      max-width: 920px;
+      margin: 18px auto;
+      text-align: center;
+    }
+
+    button {
+      background: var(--btn);
+      border: none;
+      padding: 10px 16px;
+      margin: 6px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed
+    }
+
+    #submitBtn {
+      background: #ff6b6b
+    }
+
+    #resultBox {
+      max-width: 920px;
+      margin: 18px auto;
+      background: #071018;
+      border-radius: 10px;
+      padding: 14px;
+      color: #e6eef6;
+      display: none
+    }
+
+    .res-summary {
+      font-size: 18px;
+      margin-bottom: 10px
+    }
+
+    .res-item {
+      padding: 8px;
+      border-radius: 8px;
+      margin: 6px 0
+    }
+
+    .res-item.ok {
+      background: rgba(0, 210, 122, 0.08);
+      border-left: 4px solid var(--ok);
+      color: #bfffe0
+    }
+
+    .res-item.bad {
+      background: rgba(255, 107, 107, 0.06);
+      border-left: 4px solid var(--bad);
+      color: #ffdede
+    }
+
+    footer {
+      max-width: 920px;
+      margin: 24px auto;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px
+    }
+
+    @media (max-width:640px) {
+      body {
+        padding: 12px
+      }
+
+      .question h3 {
+        font-size: 15px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Trắc nghiệm — Nhập môn CNTT</h1>
+
+  <div id="quiz"></div>
+
+  <div id="nav">
+    <button id="prevBtn">⟵ Lùi</button>
+    <button id="nextBtn">Tiếp ⟶</button>
+    <button id="submitBtn">Nộp</button>
+  </div>
+
+  <div id="resultBox" aria-live="polite">
+    <div class="res-summary" id="resSummary"></div>
+    <div id="resList"></div>
+  </div>
+
+  <footer>File offline — mở bằng trình duyệt. 10 câu/trang · 4 điểm/câu</footer>
+
+  <script>
+    // ===========================
+    // Dữ liệu câu hỏi (để anh dán vào ở đây)
+    // ===========================
+    const quizData = [
+      // Example (keep this or remove): 
+       {
+        q: "Mô hình client-server trong CNTT dùng để mô tả điều gì?",
+        a: ["Giao tiếp giữa con người và máy tính", "Hệ thống mạng không dây", "Mối quan hệ giữa máy khách và máy chủ", "Cách tạo tài khoản người dùng"], c: 2
+      },
+      {
+        q: "Hệ thống ERP trong doanh nghiệp thường được xây dựng bằng công nghệ nào?",
+        a: ["Công nghệ AI", "Công nghệ lập trình và hệ thống thông tin tích hợp", "Kỹ thuật cơ khí", "Thiết kế đồ họa"], c: 1
+      },
+      {
+        q: "Big Data mang lại lợi ích gì trong ngành CNTT?",
+        a: ["Giảm thời gian học tập", "Cải thiện kỹ năng mềm", "Phân tích dữ liệu quy mô lớn phục vụ ra quyết định", "Làm website cá nhân"], c: 2
+      },
+      {
+        q: "Các hệ thống điện toán đám mây như AWS, Azure thuộc lĩnh vực nào của CNTT?",
+        a: ["Thiết kế phần cứng", "Hệ điều hành mã nguồn mở", "Cloud Computing", "Bảo trì thiết bị"], c: 2
+      },
+      {
+        q: "API trong CNTT có vai trò gì?",
+        a: ["Giao diện vẽ đồ họa", "Giao tiếp giữa các phần mềm hoặc hệ thống khác nhau", "Phần mềm chỉnh sửa video", "Cơ sở dữ liệu ảo"], c: 1
+      },
+      {
+        q: "Trí tuệ nhân tạo (AI) có thể được ứng dụng vào đâu trong CNTT?",
+        a: ["Vẽ tranh chân dung", "Dự đoán xu hướng người dùng, xử lý ngôn ngữ tự nhiên", "Trang trí website", "In ấn văn bản"], c: 1
+      },
+      {
+        q: "Machine Learning trong CNTT thường dựa trên điều gì?",
+        a: ["Quy tắc viết tài liệu", "Lặp lại thao tác bằng tay", "Dữ liệu huấn luyện để mô hình học từ đó", "Tổ chức họp nhóm"], c: 2
+      },
+      {
+        q: "HTTPS sử dụng giao thức bảo mật nào?",
+        a: ["FTP", "UDP", "SSL/TLS", "Telnet"], c: 2
+      },
+      {
+        q: "Firewall trong hệ thống mạng có vai trò gì?",
+        a: ["Làm mát máy chủ", "Ngăn chặn truy cập trái phép vào hệ thống mạng", "Kết nối Bluetooth", "Tạo biểu mẫu nhập liệu"], c: 1
+      },
+      {
+        q: "Ngành Công nghệ thông tin chủ yếu liên quan đến:",
+        a: ["Nghiên cứu khoa học tự nhiên", "Xây dựng và phát triển phần mềm, hệ thống thông tin", "Thiết kế kiến trúc", "Quản lý tài chính"], c: 1
+      },
+      {
+        q: "Lĩnh vực nào sau đây không thuộc ngành Công nghệ thông tin?",
+        a: ["An toàn thông tin", "Phát triển phần mềm", "Thẩm mỹ và làm đẹp", "Thương mại điện tử"], c: 2
+      },
+      {
+        q: "Ngành CNTT giúp giải quyết những bài toán gì trong doanh nghiệp?",
+        a: ["Tự động hóa quy trình, phân tích dữ liệu", "Lập kế hoạch tài chính cá nhân", "Hỗ trợ làm vườn", "Giao tiếp giữa nhân viên qua điện thoại"], c: 0
+      },
+      {
+        q: "Ngôn ngữ lập trình nào thường được dạy đầu tiên cho sinh viên CNTT?",
+        a: ["C", "Python", "Java", "SQL"], c: 0
+      },
+      {
+        q: "Sự khác biệt chính giữa phần cứng và phần mềm là gì?",
+        a: ["Phần mềm là hữu hình, phần cứng là vô hình", "Cả hai đều là thiết bị điện tử", "Phần mềm không thể bị lỗi", "Phần cứng là vật lý, phần mềm là chương trình chạy trên phần cứng"], c: 3
+      },
+      {
+        q: "Chuyên ngành 'Khoa học máy tính' tập trung vào:",
+        a: ["Phát triển ứng dụng web", "Quản trị mạng", "Nền tảng toán học, thuật toán và lý thuyết máy tính", "Phát phần cứng, phần mềm"], c: 2
+      },
+      {
+        q: "Chuyên ngành nào liên quan đến bảo vệ dữ liệu và hệ thống thông tin khỏi bị tấn công?",
+        a: ["Công nghệ phần mềm", "Hệ thống thông tin", "An toàn thông tin", "Khoa học dữ liệu"], c: 2
+      },
+      {
+        q: "Ngành nào tập trung vào phân tích dữ liệu lớn (big data), AI, và máy học?",
+        a: ["Công nghệ phần mềm", "Khoa học dữ liệu", "Kỹ thuật máy tính", "Hệ thống thông tin quản lý"], c: 1
+      },
+      {
+        q: "Ngành nào tập trung vào việc xây dựng các ứng dụng như hệ thống ERP, phần mềm doanh nghiệp?",
+        a: ["Hệ thống thông tin", "Trí tuệ nhân tạo", "Kỹ thuật máy tính", "Đồ họa máy tính"], c: 0
+      },
+      {
+        q: "Giao thức TCP/IP có vai trò gì trong mạng máy tính?",
+        a: ["Lưu trữ dữ liệu văn bản", "Giao tiếp giữa các thiết bị trong mạng qua các tầng chuẩn hóa", "Thiết kế giao diện web", "Mã hóa ảnh kỹ thuật số"], c: 1
+      },
+      {
+        q: "Địa chỉ IP dùng để làm gì trong mạng máy tính?",
+        a: ["Mã hóa dữ liệu", "Định danh thiết bị trong mạng", "Quản lý file ảnh", "Tăng tốc độ mạng"], c: 1
+      },
+      {
+        q: "Thiết bị nào có thể phân tích, kiểm tra và lọc các gói tin vào/ra trong mạng?",
+        a: ["Repeater", "Switch", "Hub", "Firewall"], c: 3
+      },
+      {
+        q: "Kết nối Wi-Fi thuộc loại mạng nào?",
+        a: ["PAN", "LAN", "MAN", "WAN"], c: 1
+      },
+      {
+        q: "Thiết bị nào khuếch đại tín hiệu mạng để truyền xa hơn mà không thay đổi nội dung?",
+        a: ["Hub", "Repeater", "Switch", "Router"], c: 1
+      },
+      {
+        q: "Trình duyệt web (web browser) là gì?",
+        a: ["Thiết bị kết nối Internet", "Ứng dụng dùng để truy cập và hiển thị nội dung từ web", "Dịch vụ email", "Ứng dụng diệt virus"], c: 1
+      },
+      {
+        q: "WWW (World Wide Web) là:",
+        a: ["Toàn bộ Internet", "Một phần của Internet chứa tài nguyên siêu văn bản", "Hệ điều hành", "Mạng MAN"], c: 1
+      },
+      {
+        q: "Mạng LAN thường được sử dụng trong phạm vi nào?",
+        a: ["Một thành phố", "Một quốc gia", "Một tòa nhà hoặc văn phòng nhỏ", "Toàn cầu"], c: 2
+      },
+      {
+        q: "Mạng WAN thường bao phủ phạm vi:",
+        a: ["Phòng làm việc", "Cả một quốc gia hoặc toàn cầu", "Một lớp học", "Một toà nhà"], c: 1
+      },
+      {
+        q: "Mạng MAN thường áp dụng cho:",
+        a: ["Một trường học", "Một thành phố", "Một quốc gia", "Một khu dân cư nhỏ"], c: 1
+      },
+      {
+        q: "PAN thường được dùng cho:",
+        a: ["Kết nối trong văn phòng", "Kết nối giữa các quốc gia", "Kết nối cá nhân, như giữa điện thoại và tai nghe Bluetooth", "Kết nối giữa các doanh nghiệp"], c: 2
+      },
+      {
+        q: "Thiết bị nào dùng để kết nối nhiều thiết bị trong cùng một mạng LAN?",
+        a: ["Modem", "Switch", "Router", "Repeater"], c: 1
+      },
+      {
+        q: "Thiết bị nào dùng để kết nối nhiều mạng khác nhau, chẳng hạn từ mạng LAN ra Internet?",
+        a: ["Switch", "Hub", "Router", "NIC"], c: 2
+      },
+      {
+        q: "Trong mạng LAN, thiết bị nào dưới đây là cần thiết để chia sẻ dữ liệu giữa các máy tính?",
+        a: ["Router", "Printer", "Switch hoặc Hub", "Webcam"], c: 2
+      },
+      {
+        q: "Mô hình máy Turing có thể mô tả:",
+        a: ["Một giao diện đồ họa", "Một hệ thống lưu trữ nội dung", "Quá trình tính toán theo thuật toán với băng vô hạn", "Một loại phần cứng đặc biệt"], c: 2
+      },
+      {
+        q: "Turing Machine được xem là:",
+        a: ["Mô hình có năng lực mạnh nhất trong lý thuyết tính toán", "Mô hình yếu hơn PDA", "Không xử lý được ngôn ngữ lập trình", "Không được dùng trong thực tế"], c: 0
+      },
+      {
+        q: "Lý thuyết tính toán giúp hiểu rõ giới hạn nào của máy tính?",
+        a: ["Kích thước tối đa của một vùng nhớ trong tính toán", "Những bài toán có thể giải được hoặc không", "Tốc độ tối đa của CPU", "Mức tiêu thụ điện năng"], c: 1
+      },
+      {
+        q: "Máy Turing có thể mô phỏng:",
+        a: ["Các chỉ thị như DFA và PDA", "Các phần mềm nhưng chỉ phần mềm đơn giản", "Bất kỳ mô hình tính toán nào có thể mô phỏng bằng thuật toán", "Mạng LAN internet"], c: 2
+      },
+      {
+        q: "Mô hình Von Neumann gồm những thành phần chính nào?",
+        a: ["CPU, bộ nhớ, thiết bị vào/ra", "CPU, GPU, SSD", "ROM, RAM, Cache", "Bus, RAM, màn hình"], c: 0
+      },
+      {
+        q: "Trong mô hình Von Neumann, chương trình và dữ liệu:",
+        a: ["Lưu trữ ở hai loại bộ nhớ khác nhau", "Không được lưu trữ trong bộ nhớ chính", "Cùng được lưu trữ trong một bộ nhớ chung", "Luôn phải đặt trên ổ cứng"], c: 2
+      },
+      {
+        q: "Vai trò của đơn vị điều khiển (CU – Control Unit) là gì?",
+        a: ["Xử lý số học", "Lưu trữ dữ liệu", "Điều phối hoạt động", "Hiển thị kết quả lên màn hình"], c: 2
+      },
+      {
+        q: "Bộ phận nào trong mô hình Von Neumann xử lý các phép toán số học?",
+        a: ["CPU", "CU", "ALU", "BIOS"], c: 2
+      },
+      {
+        q: "Thanh ghi (Register) trong CPU có vai trò gì?",
+        a: ["Lưu trữ dữ liệu tạm thời tốc độ cao", "Quản lý bộ nhớ ngoài", "Tăng chất lượng đồ họa", "Điều khiển thiết bị ngoại vi"], c: 0
+      },
+      {
+        q: "Trong kiến trúc Von Neumann, CPU sẽ thực hiện gì đầu tiên trong chu trình lệnh?",
+        a: ["Giải mã lệnh", "Thực hiện lệnh", "Nạp lệnh từ bộ nhớ", "Ghi dữ liệu ra ổ đĩa"], c: 2
+      },
+      {
+        q: "Máy Turing là mô hình lý thuyết giúp mô tả:",
+        a: ["Cách con người học ngôn ngữ", "Cách một máy có thể tính toán theo thuật toán", "Cấu trúc bộ nhớ vật lý", "Thiết bị đầu vào – đầu ra"], c: 1
+      },
+      {
+        q: "Đặc điểm của mô hình Von Neumann là gì?",
+        a: ["Bộ nhớ lưu trữ dữ liệu và chương trình tách biệt", "Không thể sử dụng được cho máy tính hiện đại", "Sử dụng chung bộ nhớ cho dữ liệu và chương trình", "Không hỗ trợ lưu trữ dài hạn"], c: 2
+      },
+      {
+        q: "Trong kiến trúc Von Neumann, thành phần nào thực thi lệnh?",
+        a: ["RAM", "ROM", "CPU", "Ổ cứng"], c: 2
+      },
+      {
+        q: "Nguyên lý hoạt động của máy Turing và máy tính Von Neumann đều dựa trên:",
+        a: ["Mạng nơron", "Dữ liệu lớn (Big Data)", "Lệnh tuần tự và bộ nhớ", "Lưu trữ phân tán"], c: 2
+      },
+      {
+        q: "Bộ nhớ lưu trữ trong mô hình Von Neumann có chức năng chính là:",
+        a: ["Lưu chương trình và dữ liệu để CPU truy xuất", "Chỉ lưu dữ liệu hình ảnh", "Điều khiển tốc độ CPU", "Quản lý bộ nhớ phụ"], c: 0
+      },
+      {
+        q: "CPU gồm hai bộ phận chính là:",
+        a: ["ALU và CU", "CPU và ALU", "CPU và CU", "GPU và PSU"], c: 0
+      },
+      {
+        q: "RAM là bộ nhớ:",
+        a: ["Lưu trữ lâu dài", "Lưu trữ tạm thời, mất dữ liệu khi tắt máy", "Lưu phần mềm hệ thống", "Gắn liền với ổ cứng"], c: 1
+      },
+      {
+        q: "Phần cứng là gì?",
+        a: ["Tập hợp các phần mềm điều khiển máy", "Các thiết bị vật lý như CPU, RAM, bàn phím", "Bộ chương trình ứng dụng", "Các thuật toán xử lý ảnh"], c: 1
+      },
+      {
+        q: "Phần mềm là gì?",
+        a: ["Các thiết bị kết nối vật lý", "Các ứng dụng và hệ điều hành điều khiển phần cứng", "Chip điều khiển của máy in", "Dây nguồn, dây mạng"], c: 1
+      },
+      {
+        q: "'Phần dẻo' (firmware) là:",
+        a: ["Phần mềm được cài trong hệ điều hành", "Phần cứng được gắn cố định trong bo mạch", "Phần mềm đặc biệt, lưu trong ROM, giúp điều khiển phần cứng", "Ổ cứng của hệ thống"], c: 2
+      },
+      {
+        q: "Chức năng chính của hệ điều hành là gì?",
+        a: ["Phát nhạc và video", "Quản lý phần mềm chống virus", "Quản lý tài nguyên, phần cứng và cung cấp môi trường cho phần mềm hoạt động", "Cập nhật trình duyệt web"], c: 2
+      },
+      {
+        q: "Tổ hợp phím Ctrl + Z có tác dụng gì?",
+        a: ["Làm mới trang", "Hoàn tác thao tác vừa thực hiện", "Đóng cửa sổ", "Ghi lại macro"], c: 1
+      },
+      {
+        q: "Tổ hợp phím Ctrl + A giúp:",
+        a: ["Tạo thư mục", "Chọn tất cả nội dung trong cửa sổ hoặc tài liệu", "Thoát khỏi ứng dụng", "Tăng âm lượng"], c: 1
+      },
+      {
+        q: "Để khóa nhanh màn hình máy tính Windows, bạn nhấn:",
+        a: ["Ctrl + Shift + Del", "Windows + L", "Alt + Space", "Ctrl + Q"], c: 1
+      },
+      {
+        q: "Phím tắt Ctrl + P có chức năng:",
+        a: ["Dán nội dung", "Mở cửa sổ in tài liệu", "Phóng to cửa sổ", "Lưu văn bản"], c: 1
+      },
+      {
+        q: "Để lưu file nhanh trên Windows, bạn dùng tổ hợp phím:",
+        a: ["Ctrl + P", "Ctrl + S", "Ctrl + Q", "Ctrl + D"], c: 1
+      },
+      {
+        q: "Tổ hợp phím Ctrl + N trong Microsoft Word dùng để:",
+        a: ["Tạo thư mục mới", "Tạo một tài liệu mới", "Lưu văn bản", "Đóng tài liệu"], c: 1
+      },
+      {
+        q: "Tổ hợp phím Windows + D có chức năng:",
+        a: ["Mở bảng điều khiển", "Thu nhỏ tất cả cửa sổ và hiển thị desktop", "Tắt máy", "Mở hộp thoại Run"], c: 1
+      },
+      {
+        q: "Tổ hợp phím Windows + R dùng để:",
+        a: ["Chụp màn hình", "Mở cửa sổ lệnh Run", "Tăng âm lượng", "Mở thanh Task Manager"], c: 1
+      },
+      {
+        q: "Tổ hợp phím Ctrl + F trong trình duyệt có tác dụng:",
+        a: ["Lưu trang web", "Tìm kiếm văn bản trong trang hiện tại", "Làm mới trang", "In trang"], c: 1
+      },
+      {
+        q: "Trong hệ điều hành, Task Manager được mở nhanh bằng tổ hợp:",
+        a: ["Ctrl + Alt + Del", "Ctrl + Tab", "Windows + Q", "Ctrl + R"], c: 0
+      },
+      {
+        q: "Windows + Tab dùng để:",
+        a: ["Đóng tất cả cửa sổ", "Mở giao diện chuyển đổi đa nhiệm", "Mở thanh tìm kiếm", "Mở bảng font chữ"], c: 1
+      },
+      {
+        q: "Tổ hợp Ctrl + Shift + Esc dùng để:",
+        a: ["Khóa máy", "Tắt Wi-Fi", "Mở bảng điều khiển Power", "Mở Task Manager"], c: 3
+      },
+      {
+        q: "Tổ hợp phím Ctrl + Backspace giúp:",
+        a: ["Xóa từng ký tự", "Xóa từng từ bên trái con trỏ", "Đóng cửa sổ", "Thêm dòng mới"], c: 1
+      },
+      {
+        q: "Hệ điều hành (Operating System) là gì?",
+        a: ["Một thiết bị đầu ra", "Một phần mềm giúp quản lý phần cứng và phần mềm khác", "Một trình duyệt web", "Một loại virus máy tính"], c: 1
+      },
+      {
+        q: "Hệ điều hành phổ biến nhất hiện nay trên máy tính cá nhân là:",
+        a: ["Linux", "MS-DOS", "Android", "Windows"], c: 3
+      },
+      {
+        q: "Tên hệ điều hành mã nguồn mở phổ biến là:",
+        a: ["Windows", "LINUX", "MACOS", "IOS"], c: 1
+      },
+      {
+        q: "Hệ điều hành có vai trò chính nào sau đây?",
+        a: ["Duyệt web nhanh hơn", "Tăng tốc độ CPU", "Quản lý tài nguyên máy tính và cung cấp giao diện người dùng", "Quét virus"], c: 2
+      },
+      {
+        q: "Tập tin có phần mở rộng .docx thường mở bằng phần mềm nào?",
+        a: ["MS Word", "MS Excel", "MS Powerpoint", "MS Office"], c: 0
+      },
+      {
+        q: "Tập tin có phần mở rộng .xlsx thường mở bằng phần mềm nào?",
+        a: ["MS Excel", "MS Powerpoint", "MS Office", "MS Word"], c: 0
+      },
+      {
+        q: "Muốn tạo một thư mục mới trên máy tính, bạn nhấn tổ hợp phím nào trong Windows?",
+        a: ["Ctrl + N", "Ctrl + Shift + N", "Alt + F4", "Ctrl + T"], c: 1
+      },
+      {
+        q: "Tập tin (file) là gì?",
+        a: ["Một thư mục chứa dữ liệu", "Một đơn vị lưu trữ dữ liệu", "Một loại phần mềm", "Một vùng nhớ RAM"], c: 1
+      },
+      {
+        q: "Thư mục (folder) dùng để làm gì?",
+        a: ["Chạy phần mềm", "Lưu tạm dữ liệu", "Chứa và tổ chức các tập tin", "Tăng dung lượng ổ cứng"], c: 2
+      },
+      {
+        q: "Tổ hợp phím Ctrl + C có chức năng:",
+        a: ["Dán nội dung", "Cắt nội dung", "Sao chép nội dung", "In ấn nội dung"], c: 2
+      },
+      {
+        q: "Tổ hợp phím Alt + Tab giúp:",
+        a: ["Tắt nhanh cửa sổ", "Tạo thư mục mới", "Mở màn hình desktop", "Di chuyển giữa các cửa sổ đang mở"], c: 3
+      },
+      {
+        q: "Để mở File Explorer trên Windows, bạn nhấn:",
+        a: ["Ctrl + E", "Windows + E", "Alt + F", "Alt + F4"], c: 1
+      },
+      {
+        q: "Để chụp toàn bộ màn hình, bạn nhấn phím nào?",
+        a: ["PrtSc", "Ctrl + P", "F5", "Alt + S"], c: 0
+      },
+      {
+        q: "Tập tin có phần mở rộng .pptx thường mở bằng phần mềm nào?",
+        a: ["MS Word", "MS Powerpoint", "MS Excel", "MS Office"], c: 1
+      },
+      {
+        q: "Kết quả của phép cộng nhị phân 1011 + 1101 là:",
+        a: ["10100", "10000", "11000", "11000"], c: 2
+      },
+      {
+        q: "Kết quả của phép trừ nhị phân 1101 - 0110 là:",
+        a: ["1001", "111", "1010", "1100"], c: 0
+      },
+      {
+        q: "1110 (nhị phân) + 101 (nhị phân) = ?",
+        a: ["10101", "10011", "1111", "11111"], c: 1
+      },
+      {
+        q: "10001 (nhị phân) – 111 (nhị phân) = ?",
+        a: ["1100", "1110", "1000", "1010"], c: 1
+      },
+      {
+        q: "Số tiếp theo trong dãy nhị phân: 1, 10, 11, 100, 101, ?",
+        a: ["111", "110", "1000", "1010"], c: 1
+      },
+      {
+        q: "Số tiếp theo trong dãy hệ bát phân: 3, 4, 5, 6, 7, ?",
+        a: ["8", "9", "10", "11"], c: 2
+      },
+      {
+        q: "Trong hệ nhị phân, số 1111 là bao nhiêu ở hệ thập phân?",
+        a: ["14", "15", "16", "17"], c: 1
+      },
+      {
+        q: "Dãy số: 1, 10, 100, 1000, ? (nhị phân)",
+        a: ["10000", "1010", "1100", "1110"], c: 0
+      },
+      {
+        q: "Trong hệ bát phân, số tiếp theo của 17 là:",
+        a: ["18", "19", "20", "21"], c: 2
+      },
+      {
+        q: "Số nhị phân 100101 tương đương với số thập phân nào?",
+        a: ["30", "33", "39", "37"], c: 3
+      },
+      {
+        q: "Trong hệ thập lục phân, A + F = ?",
+        a: ["AF", "19", "1A", "G"], c: 2
+      },
+      {
+        q: "Trong hệ bát phân, 77 + 1 = ?",
+        a: ["97", "78", "99", "100"], c: 3
+      },
+      {
+        q: "Trong hệ thập lục phân, F + 1 = ?",
+        a: ["G", "10", "11", "1F"], c: 1
+      },
+      {
+        q: "Số tiếp theo trong dãy thập phân: 1, 3, 7, 15, ?",
+        a: ["31", "30", "32", "29"], c: 0
+      },
+      {
+        q: "Nhị phân 1010 tương đương với thập lục phân nào?",
+        a: ["A", "B", "C", "D"], c: 0
+      },
+      {
+        q: "Nhị phân 1111 tương đương với thập lục phân nào?",
+        a: ["D", "E", "F", "G"], c: 2
+      },
+      {
+        q: "Nhị phân 1100 tương đương với thập lục phân nào?",
+        a: ["A", "B", "C", "D"], c: 2
+      },
+      {
+        q: "Nhị phân 10101010 tương đương với thập lục phân nào?",
+        a: ["AA", "BB", "CC", "DD"], c: 0
+      },
+      {
+        q: "Nhị phân 00001111 tương đương với thập lục phân nào?",
+        a: ["0F", "F0", "1F", "11"], c: 0
+      },
+      {
+        q: "Nhị phân 11111111 tương đương với thập lục phân nào?",
+        a: ["FF", "AA", "CC", "EE"], c: 0
+      },
+      {
+        q: "Số nhị phân 1010 tương đương với số thập phân nào?",
+        a: ["8", "9", "10", "11"], c: 2
+      },
+      {
+        q: "Số thập phân 13 có dạng nhị phân là:",
+        a: ["1101", "1001", "1010", "1000"], c: 0
+      },
+      {
+        q: "Chuyển số nhị phân 111 sang hệ thập phân:",
+        a: ["6", "7", "8", "9"], c: 1
+      },
+      {
+        q: "Số thập phân 20 có biểu diễn nhị phân là gì?",
+        a: ["10100", "10111", "10011", "101010"], c: 0
+      },
+      {
+        q: "Số nhị phân 10000 tương ứng với số thập phân nào?",
+        a: ["8", "16", "32", "24"], c: 1
+      },
+      {
+        q: "Dãy: 0, 1, 2, ..., 8, 9, A, B, … Số tiếp theo là (Hệ thập lục phân)",
+        a: ["D", "C", "B", "F"], c: 1
+      },
+      {
+        q: "Dãy A, B, C, D, … Số tiếp theo là (Hệ thập lục phân)",
+        a: ["F", "10", "E", "9"], c: 2
+      },
+      {
+        q: "Dãy: 1A, 1B, 1C, ... Số tiếp theo là (Hệ thập lục phân)",
+        a: ["1F", "1E", "1D", "1C"], c: 2
+      },
+      {
+        q: "Dãy: 2D, 2E, 2F, ... Số tiếp theo là (Hệ thập lục phân)",
+        a: ["21", "31", "30", "4F"], c: 0
+      },
+      {
+        q: "Số tiếp theo sau 17 trong hệ bát phân (octal) là:",
+        a: ["17", "18", "20", "21"], c: 2
+      },
+      {
+        q: "Kết quả của phép cộng nhị phân: 1 + 1 là:",
+        a: ["10", "11", "1"], c: 0
+      },
+      {
+        q: "Kết quả của: 101 + 11 là:",
+        a: ["1000", "1001", "1100", "1010"], c: 0
+      },
+      {
+        q: "Tính: 111 + 1",
+        a: ["1000", "1110", "1010", "1100"], c: 0
+      },
+      {
+        q: "Kết quả của phép tính: 1101 + 1011 là:",
+        a: ["10000", "11000", "10001", "10101"], c: 0
+      },
+      {
+        q: "Tính: 1001 + 0110",
+        a: ["1111", "1100", "1010", "1000"], c: 0
+      },
+      {
+        q: "Tính: 10101₂ – 01110₂",
+        a: ["111", "1001", "1111", "101"], c: 0
+      },
+      {
+        q: "Tính: 11010₂ – 10001₂",
+        a: ["1100", "10011", "1001", "111"], c: 2
+      },
+      {
+        q: "Tính: 100011₂ – 011010₂",
+        a: ["1001", "111", "10011", "11001"], c: 0
+      },
+      {
+        q: "Tính: 111100₂ – 101101₂",
+        a: ["1111", "11111", "10111", "11110"], c: 0
+      },
+      {
+        q: "Tính: 110111₂ – 101011₂",
+        a: ["1100", "10010", "11001", "1111"], c: 0
+      }
+
+      /* PASTE YOUR QUESTIONS HERE (dạng ,{q:"...", a:["A","B","C","D"], c:idx} )
+         - If you paste with a leading comma, paste it right after the last object above.
+         - If you paste as the very first items, remove the initial leading comma.
+         - 'c' is zero-based index: 0 => first option (A), 1 => B, 2 => C, 3 => D.
+      */
+
+      // nếu anh muốn em gen toàn bộ 120 câu thì dán toàn bộ block câu anh có ở đây
+    ];
+
+    // ===========================
+    // Config
+    // ===========================
+    const perPage = 10;            // số câu mỗi trang
+    const pointsPerQ = 4;         // điểm mỗi câu
+    let currentPage = 0;
+    const answers = new Array(quizData.length).fill(null);
+
+    // ===========================
+    // Render pages
+    // ===========================
+    function renderPage(page) {
+      const start = page * perPage;
+      const end = Math.min(start + perPage, quizData.length);
+      const container = document.getElementById("quiz");
+      container.innerHTML = ""; // clear
+
+      for (let i = start; i < end; i++) {
+        const item = quizData[i];
+        const div = document.createElement("div");
+        div.className = "question";
+        div.innerHTML = `<h3>${i + 1}. ${escapeHtml(item.q)}</h3>`;
+        item.a.forEach((opt, j) => {
+          const checked = (answers[i] === j) ? "checked" : "";
+          div.innerHTML += `<label class="option">
+        <input type="radio" name="q${i}" value="${j}" ${checked}/>
+        <strong>${String.fromCharCode(65 + j)}.</strong> ${escapeHtml(opt)}
+      </label>`;
+        });
+        container.appendChild(div);
+      }
+
+      // update navigation visibility
+      document.getElementById("prevBtn").disabled = (page === 0);
+      document.getElementById("nextBtn").disabled = ((page + 1) * perPage >= quizData.length);
+      // show/hide submit
+      document.getElementById("submitBtn").style.display = ((page + 1) * perPage >= quizData.length) ? "inline-block" : "inline-block";
+    }
+
+    // save current page answers into answers[]
+    function savePageAnswers() {
+      const start = currentPage * perPage;
+      const end = Math.min(start + perPage, quizData.length);
+      for (let i = start; i < end; i++) {
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        answers[i] = sel ? parseInt(sel.value) : null;
+      }
+    }
+
+    // ===========================
+    // Navigation handlers
+    // ===========================
+    document.getElementById("nextBtn").addEventListener("click", () => {
+      savePageAnswers();
+      if ((currentPage + 1) * perPage < quizData.length) { currentPage++; renderPage(currentPage); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+    document.getElementById("prevBtn").addEventListener("click", () => {
+      savePageAnswers();
+      if (currentPage > 0) { currentPage--; renderPage(currentPage); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    });
+    document.getElementById("submitBtn").addEventListener("click", () => {
+      savePageAnswers();
+      showResults();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ===========================
+    // Results
+    // ===========================
+    function showResults() {
+      const total = quizData.length;
+      let correct = 0;
+      const list = document.getElementById("resList");
+      list.innerHTML = "";
+
+      for (let i = 0; i < total; i++) {
+        const item = quizData[i];
+        const user = answers[i];
+        const ok = (user === item.c);
+        if (ok) correct++;
+        const div = document.createElement("div");
+        div.className = "res-item " + (ok ? "ok" : "bad");
+        const userText = (user === null) ? "Chưa chọn" : `${String.fromCharCode(65 + user)}. ${escapeHtml(item.a[user] || "")}`;
+        const correctText = `${String.fromCharCode(65 + item.c)}. ${escapeHtml(item.a[item.c] || "")}`;
+        div.innerHTML = `<strong>Câu ${i + 1}:</strong> bạn chọn: <em>${userText}</em> — đáp án: <em>${correctText}</em>`;
+        list.appendChild(div);
+      }
+
+      const points = correct * pointsPerQ;
+      const pct = (total === 0) ? 0 : ((correct / total) * 100).toFixed(1);
+      document.getElementById("resSummary").innerHTML = `🎯 Bạn đúng ${correct}/${total} — Điểm: ${points}/${total * pointsPerQ} (${pct}%)`;
+      document.getElementById("resultBox").style.display = "block";
+      // hide quiz and nav to avoid changes after submit
+      document.getElementById("quiz").style.display = "none";
+      document.getElementById("nav").style.display = "none";
+    }
+
+    // ===========================
+    // Helpers
+    // ===========================
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // ===========================
+    // Init
+    // ===========================
+    renderPage(currentPage);
+  </script>
+</body>
+
+</html>
