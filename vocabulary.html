@@ -282,6 +282,9 @@
                 <button class="btn btn-primary" onclick="startFlashcard()">🃏 Flashcard</button>
                 <button class="btn btn-success" onclick="startQuiz()">✍️ Quiz</button>
             </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-danger" onclick="resetData()">🔄 Xóa & Tải File Mới</button>
+            </div>
             <div class="stats">
                 <div class="stat-item">
                     <div class="stat-number" id="totalWords">0</div>
@@ -441,13 +444,31 @@
                 currentIndex = 0;
             }
             
+            // Reset trạng thái lật
+            isFlipped = false;
+            const card = document.getElementById('flashcardInner');
+            card.classList.remove('flipped');
+            
             updateStats();
-            showFlashcard();
+            
+            // Đợi animation hoàn thành rồi mới hiển thị từ mới
+            setTimeout(() => {
+                showFlashcard();
+            }, 300);
         }
 
         function markAsWrong() {
+            // Reset trạng thái lật trước khi chuyển từ
+            isFlipped = false;
+            const card = document.getElementById('flashcardInner');
+            card.classList.remove('flipped');
+            
             currentIndex = (currentIndex + 1) % wrongWords.length;
-            showFlashcard();
+            
+            // Đợi animation hoàn thành rồi mới hiển thị từ mới
+            setTimeout(() => {
+                showFlashcard();
+            }, 300);
         }
 
         function startQuiz() {
@@ -542,6 +563,20 @@
             document.getElementById('quizSection').classList.add('hidden');
             document.getElementById('modeSection').classList.remove('hidden');
             updateStats();
+        }
+
+        function resetData() {
+            if (confirm('⚠️ Bạn có chắc muốn xóa dữ liệu hiện tại và tải file mới?')) {
+                vocabulary = [];
+                wrongWords = [];
+                currentIndex = 0;
+                document.getElementById('fileInput').value = '';
+                document.getElementById('fileInfo').textContent = '';
+                document.getElementById('modeSection').classList.add('hidden');
+                document.getElementById('flashcardSection').classList.add('hidden');
+                document.getElementById('quizSection').classList.add('hidden');
+                document.getElementById('importSection').classList.remove('hidden');
+            }
         }
     </script>
 </body>
