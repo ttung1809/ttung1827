@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Học Từ Vựng</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📚 Học Từ Vựng</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
@@ -33,14 +34,14 @@
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .card {
             background: white;
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             margin-bottom: 20px;
         }
 
@@ -57,8 +58,7 @@
 
         .file-input-wrapper input[type=file] {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             opacity: 0;
@@ -104,6 +104,7 @@
             display: flex;
             gap: 15px;
             justify-content: center;
+            flex-wrap: wrap;
             margin-top: 20px;
         }
 
@@ -127,10 +128,10 @@
             transform: rotateY(180deg);
         }
 
-        .flashcard-front, .flashcard-back {
+        .flashcard-front,
+        .flashcard-back {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             backface-visibility: hidden;
             border-radius: 15px;
             display: flex;
@@ -139,7 +140,7 @@
             font-size: 2em;
             font-weight: bold;
             padding: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
         .flashcard-front {
@@ -158,10 +159,11 @@
         }
 
         .quiz-word {
-            font-size: 2.5em;
+            font-size: 2.2em;
             color: #667eea;
             margin-bottom: 30px;
-            font-weight: bold;
+            font-weight: 800;
+            word-break: break-word;
         }
 
         .answer-input {
@@ -204,6 +206,7 @@
             gap: 15px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .stats {
@@ -258,10 +261,7 @@
 
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: rgba(0, 0, 0, 0.7);
             display: none;
             align-items: center;
@@ -294,75 +294,157 @@
             font-size: 1.1em;
         }
 
-        .modal-buttons {
+        /* Fill Blanks */
+        #fillBlanksContainer {
             display: flex;
-            gap: 15px;
             justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .letter-box {
+            width: 50px;
+            height: 60px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            font-family: monospace;
+            background: white;
+            color: #667eea;
+            user-select: none;
+        }
+
+        .letter-box.blank {
+            background: #f8f9fa;
+        }
+
+        .letter-box.gap {
+            border-color: transparent;
+            background: transparent;
+            width: 18px;
+        }
+
+        .letter-box input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            font-family: monospace;
+            background: transparent;
+            color: #667eea;
+            text-transform: uppercase;
+        }
+
+        .letter-box input:focus {
+            outline: none;
+            background: #fff3cd;
+            border-radius: 7px;
+        }
+
+        /* Multiple Choice */
+        #mcOptions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .mc-option {
+            padding: 18px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1.05em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            text-align: center;
+            user-select: none;
+        }
+
+        .mc-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-2px);
+        }
+
+        .mc-option.correct {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .mc-option.incorrect {
+            border-color: #dc3545;
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>📚 Học Từ Vựng</h1>
-            <p>Học nhanh, nhớ lâu với flashcard và quiz</p>
+            <p>Học nhanh, nhớ lâu với Flashcard, Điền chữ và Trắc nghiệm</p>
         </div>
 
+        <!-- Import -->
         <div class="card import-section" id="importSection">
             <h2 style="margin-bottom: 20px; color: #333;">Nhập Danh Sách Từ Vựng</h2>
-            <p class="instruction">
-                File Excel cần có 2 cột: Cột A (Tiếng Anh) và Cột B (Tiếng Việt)
-            </p>
+            <p class="instruction">File Excel cần có 2 cột: Cột A (Tiếng Anh) và Cột B (Tiếng Việt)</p>
             <div class="file-input-wrapper">
                 <button class="btn btn-primary">📁 Chọn File Excel</button>
-                <input type="file" id="fileInput" accept=".xlsx, .xls">
+                <input type="file" id="fileInput" accept=".xlsx,.xls" />
             </div>
             <div id="fileInfo" style="color: #28a745; margin-top: 10px;"></div>
         </div>
 
+        <!-- Modes -->
         <div class="card hidden" id="modeSection">
             <h2 style="margin-bottom: 20px; text-align: center; color: #333;">Chọn Chế Độ Học</h2>
             <div class="mode-selector">
                 <button class="btn btn-primary" onclick="startFlashcard()">🃏 Flashcard</button>
                 <button class="btn btn-success" onclick="startQuiz()">✍️ Quiz</button>
+                <button class="btn btn-primary" onclick="startFillBlanks()"
+                    style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🔤 Điền Chữ</button>
+                <button class="btn btn-primary" onclick="startMultipleChoice()"
+                    style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">🎯 Trắc Nghiệm</button>
             </div>
-            <div style="text-align: center; margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="shuffleWords()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🔀 Xáo Trộn</button>
+            <div
+                style="text-align: center; margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="shuffleWords()"
+                    style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🔀 Xáo Trộn</button>
                 <button class="btn btn-success" onclick="exportProgress()">💾 Xuất Tiến Độ</button>
-                <button class="btn btn-primary" onclick="document.getElementById('importProgress').click()">📥 Nhập Tiến Độ</button>
-                <button class="btn" onclick="resetData()" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white;">🔄 Xóa & Tải File Mới</button>
-                <input type="file" id="importProgress" accept=".json" style="display: none;" onchange="importProgress(event)">
+                <button class="btn btn-primary" onclick="document.getElementById('importProgress').click()">📥 Nhập Tiến
+                    Độ</button>
+                <button class="btn btn-danger" onclick="resetData()">🔄 Xóa & Tải File Mới</button>
+                <input type="file" id="importProgress" accept=".json" style="display:none"
+                    onchange="importProgress(event)" />
             </div>
             <div class="stats">
                 <div class="stat-item">
-                    <div class="stat-number" id="totalWords">0</div>
+                    <div class="stat-number" id="statsTotal">0</div>
                     <div class="stat-label">Tổng từ</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number" id="learnedWords">0</div>
+                    <div class="stat-number" id="statsLearned">0</div>
                     <div class="stat-label">Đã học</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number" id="remainingWords">0</div>
-                    <div class="stat-label">Còn lại</div>
-                </div>
-            </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalWords">0</div>
-                    <div class="stat-label">Tổng từ</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="learnedWords">0</div>
-                    <div class="stat-label">Đã học</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="remainingWords">0</div>
+                    <div class="stat-number" id="statsRemaining">0</div>
                     <div class="stat-label">Còn lại</div>
                 </div>
             </div>
         </div>
 
+        <!-- Flashcards -->
         <div class="card hidden" id="flashcardSection">
             <h2 style="margin-bottom: 20px; text-align: center; color: #333;">🃏 Flashcard</h2>
             <div class="progress-bar">
@@ -371,23 +453,18 @@
             <p class="instruction">Nhấn vào thẻ để lật và xem nghĩa</p>
             <div class="flashcard" onclick="flipCard()">
                 <div class="flashcard-inner" id="flashcardInner">
-                    <div class="flashcard-front" id="flashcardFront">
-                        Click to start
-                    </div>
-                    <div class="flashcard-back" id="flashcardBack">
-                        Nghĩa tiếng Việt
-                    </div>
+                    <div class="flashcard-front" id="flashcardFront">Click to start</div>
+                    <div class="flashcard-back" id="flashcardBack">Nghĩa tiếng Việt</div>
                 </div>
             </div>
             <div class="controls">
                 <button class="btn btn-danger" onclick="markAsWrong()">❌ Chưa Nhớ</button>
                 <button class="btn btn-success" onclick="markAsCorrect()">✅ Đã Nhớ</button>
             </div>
-            <div class="controls">
-                <button class="btn btn-primary" onclick="backToMode()">🔙 Quay Lại</button>
-            </div>
+            <div class="controls"><button class="btn btn-primary" onclick="backToMode()">🔙 Quay Lại</button></div>
         </div>
 
+        <!-- Typing Quiz -->
         <div class="card hidden" id="quizSection">
             <h2 style="margin-bottom: 20px; text-align: center; color: #333;">✍️ Quiz</h2>
             <div class="progress-bar">
@@ -395,404 +472,397 @@
             </div>
             <p class="instruction">Nhập nghĩa tiếng Việt của từ dưới đây</p>
             <div class="quiz-word" id="quizWord">Word</div>
-            <input type="text" class="answer-input" id="answerInput" placeholder="Nhập nghĩa tiếng Việt...">
-            <div class="controls">
-                <button class="btn btn-success" onclick="checkAnswer()">Kiểm Tra</button>
-            </div>
+            <input type="text" class="answer-input" id="answerInput" placeholder="Nhập nghĩa tiếng Việt..." />
+            <div class="controls"><button class="btn btn-success" onclick="checkAnswer()">Kiểm Tra</button></div>
             <div id="feedback" class="feedback hidden"></div>
-            <div class="controls" style="margin-top: 20px;">
-                <button class="btn btn-primary" onclick="backToMode()">🔙 Quay Lại</button>
-            </div>
+            <div class="controls" style="margin-top: 20px;"><button class="btn btn-primary" onclick="backToMode()">🔙
+                    Quay Lại</button></div>
         </div>
 
-        <!-- Modal xác nhận xóa -->
-        <div id="confirmModal" class="modal-overlay">
+        <!-- Fill in the Blanks -->
+        <div class="card hidden" id="fillBlanksSection">
+            <h2 style="margin-bottom: 20px; text-align: center; color: #333;">🔤 Điền Chữ Cái</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="fillBlanksProgress"></div>
+            </div>
+            <p class="instruction">Nhìn nghĩa tiếng Việt, điền các chữ cái vào chỗ trống</p>
+            <div
+                style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                <div style="font-size: 1.1em; margin-bottom: 6px; font-weight: 700;">Nghĩa:</div>
+                <div class="quiz-word" id="fillBlanksVietnamese" style="color: white;">Nghĩa tiếng Việt</div>
+            </div>
+            <div id="fillBlanksContainer"></div>
+            <div class="controls">
+                <button class="btn btn-success" onclick="checkFillBlanks()">Kiểm Tra</button>
+                <button class="btn btn-primary" onclick="resetFillBlanks()">🔄 Làm Lại</button>
+            </div>
+            <div id="fillBlanksFeedback" class="feedback hidden"></div>
+            <div class="controls" style="margin-top: 20px;"><button class="btn btn-primary" onclick="backToMode()">🔙
+                    Quay Lại</button></div>
+        </div>
+
+        <!-- Multiple Choice -->
+        <div class="card hidden" id="multipleChoiceSection">
+            <h2 style="margin-bottom: 20px; text-align: center; color: #333;">🎯 Trắc Nghiệm</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="multipleChoiceProgress"></div>
+            </div>
+            <p class="instruction">Chọn nghĩa đúng của từ tiếng Anh</p>
+            <div class="quiz-word" id="mcWord">Word</div>
+            <div id="mcOptions"></div>
+            <div id="mcFeedback" class="feedback hidden"></div>
+            <div class="controls" style="margin-top: 20px;"><button class="btn btn-primary" onclick="backToMode()">🔙
+                    Quay Lại</button></div>
+        </div>
+
+        <!-- Confirm Modal -->
+        <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true">
             <div class="modal-box">
                 <h3>⚠️ Xác nhận xóa</h3>
                 <p>Bạn có chắc muốn xóa dữ liệu hiện tại và tải file mới?</p>
-                <div class="modal-buttons">
+                <div class="controls" style="justify-content:center;">
                     <button class="btn btn-primary" onclick="cancelReset()">Hủy</button>
-                    <button class="btn" onclick="confirmReset()" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white;">Xóa</button>
+                    <button class="btn btn-danger" onclick="confirmReset()">Xóa</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let vocabulary = [];
-        let wrongWords = [];
+        // =====================
+        // State
+        // =====================
+        let vocabulary = [];   // [{ english, vietnamese, learned }]
+        let wrongWords = [];   // học đến khi nhớ (bỏ đúng)
         let currentIndex = 0;
         let currentMode = '';
         let isFlipped = false;
-        let autoSaveEnabled = true;
 
-        // Tự động khôi phục tiến độ khi load trang
-        window.addEventListener('load', function() {
-            restoreProgress();
-        });
+        // =====================
+        // Helpers
+        // =====================
+        const qs = (sel, root = document) => root.querySelector(sel);
+        const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        const isLetter = (ch) => /[a-z]/i.test(ch);
 
-        // Cảnh báo trước khi tắt trang
-        window.addEventListener('beforeunload', function(e) {
-            if (vocabulary.length > 0 && wrongWords.length > 0) {
-                saveProgress(); // Tự động lưu
+        function notify(msg) {
+            const el = document.createElement('div');
+            el.textContent = msg;
+            el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:12px 20px;border-radius:20px;font-weight:700;z-index:10000;box-shadow:0 5px 20px rgba(0,0,0,.3)';
+            document.body.appendChild(el);
+            setTimeout(() => { el.style.transition = 'opacity .25s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 250); }, 1800);
+        }
+
+        function saveProgress() {
+            if (!vocabulary.length) return;
+            const data = { vocabulary, wrongWords, currentIndex, ts: Date.now() };
+            try { localStorage.setItem('vocab_progress', JSON.stringify(data)); } catch (_) { /* ignore */ }
+        }
+        function restoreProgress() {
+            try {
+                const raw = localStorage.getItem('vocab_progress');
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (Array.isArray(data.vocabulary) && data.vocabulary.length) {
+                    vocabulary = data.vocabulary;
+                    wrongWords = Array.isArray(data.wrongWords) ? data.wrongWords : [...vocabulary];
+                    currentIndex = data.currentIndex || 0;
+                    qs('#importSection').classList.add('hidden');
+                    qs('#modeSection').classList.remove('hidden');
+                    updateStats();
+                    notify('📂 Đã khôi phục tiến độ!');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // =====================
+        // File Import / Export
+        // =====================
+        qs('#fileInput').addEventListener('change', handleFile);
+        window.addEventListener('load', restoreProgress);
+
+        window.addEventListener('beforeunload', (e) => {
+            if (vocabulary.length && wrongWords.length) {
+                saveProgress();
                 e.preventDefault();
                 e.returnValue = 'Bạn có tiến độ học chưa hoàn thành. Bạn có chắc muốn thoát?';
             }
         });
 
-        document.getElementById('fileInput').addEventListener('change', handleFile);
-
-        function handleFile(e) {
-            const file = e.target.files[0];
+        function handleFile(ev) {
+            const file = ev.target.files?.[0];
             if (!file) return;
-
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
-                
-                vocabulary = [];
-                for (let i = 0; i < jsonData.length; i++) {
-                    if (jsonData[i][0] && jsonData[i][1]) {
-                        vocabulary.push({
-                            english: jsonData[i][0].toString().trim(),
-                            vietnamese: jsonData[i][1].toString().trim(),
-                            learned: false
-                        });
-                    }
-                }
+                const wb = XLSX.read(data, { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                wrongWords = [...vocabulary];
-                
-                document.getElementById('fileInfo').textContent = `✅ Đã tải ${vocabulary.length} từ vựng`;
-                document.getElementById('importSection').classList.add('hidden');
-                document.getElementById('modeSection').classList.remove('hidden');
+                vocabulary = [];
+                for (let i = 0; i < rows.length; i++) {
+                    const en = rows[i][0];
+                    const vi = rows[i][1];
+                    if (!en || !vi) continue;
+                    vocabulary.push({ english: String(en).trim(), vietnamese: String(vi).trim(), learned: false });
+                }
+                wrongWords = vocabulary.map(w => ({ ...w }));
+
+                qs('#fileInfo').textContent = `✅ Đã tải ${vocabulary.length} từ vựng`;
+                qs('#importSection').classList.add('hidden');
+                qs('#modeSection').classList.remove('hidden');
                 updateStats();
-                saveProgress(); // Tự động lưu sau khi import
+                saveProgress();
             };
             reader.readAsArrayBuffer(file);
         }
 
-        function updateStats() {
-            const learned = vocabulary.filter(w => w.learned).length;
-            const total = vocabulary.length;
-            const remaining = wrongWords.length;
-            
-            document.getElementById('totalWords').textContent = total;
-            document.getElementById('learnedWords').textContent = learned;
-            document.getElementById('remainingWords').textContent = remaining;
-        }
-
-        function startFlashcard() {
-            if (wrongWords.length === 0) {
-                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ vựng!');
-                return;
-            }
-            currentMode = 'flashcard';
-            currentIndex = 0;
-            document.getElementById('modeSection').classList.add('hidden');
-            document.getElementById('flashcardSection').classList.remove('hidden');
-            showFlashcard();
-        }
-
-        function showFlashcard() {
-            if (wrongWords.length === 0) {
-                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ!');
-                backToMode();
-                return;
-            }
-
-            isFlipped = false;
-            const card = document.getElementById('flashcardInner');
-            card.classList.remove('flipped');
-            
-            const word = wrongWords[currentIndex];
-            document.getElementById('flashcardFront').textContent = word.english;
-            document.getElementById('flashcardBack').textContent = word.vietnamese;
-            
-            updateProgress('flashcard');
-        }
-
-        function flipCard() {
-            isFlipped = !isFlipped;
-            const card = document.getElementById('flashcardInner');
-            if (isFlipped) {
-                card.classList.add('flipped');
-            } else {
-                card.classList.remove('flipped');
-            }
-        }
-
-        function markAsCorrect() {
-            const word = wrongWords[currentIndex];
-            word.learned = true;
-            wrongWords.splice(currentIndex, 1);
-            
-            if (currentIndex >= wrongWords.length) {
-                currentIndex = 0;
-            }
-            
-            // Reset trạng thái lật
-            isFlipped = false;
-            const card = document.getElementById('flashcardInner');
-            card.classList.remove('flipped');
-            
-            updateStats();
-            saveProgress(); // Tự động lưu tiến độ
-            
-            // Đợi animation hoàn thành rồi mới hiển thị từ mới
-            setTimeout(() => {
-                showFlashcard();
-            }, 300);
-        }
-
-        function markAsWrong() {
-            // Reset trạng thái lật trước khi chuyển từ
-            isFlipped = false;
-            const card = document.getElementById('flashcardInner');
-            card.classList.remove('flipped');
-            
-            currentIndex = (currentIndex + 1) % wrongWords.length;
-            
-            // Đợi animation hoàn thành rồi mới hiển thị từ mới
-            setTimeout(() => {
-                showFlashcard();
-            }, 300);
-        }
-
-        function startQuiz() {
-            if (wrongWords.length === 0) {
-                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ vựng!');
-                return;
-            }
-            currentMode = 'quiz';
-            currentIndex = 0;
-            document.getElementById('modeSection').classList.add('hidden');
-            document.getElementById('quizSection').classList.remove('hidden');
-            showQuiz();
-        }
-
-        function showQuiz() {
-            if (wrongWords.length === 0) {
-                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ!');
-                backToMode();
-                return;
-            }
-
-            const word = wrongWords[currentIndex];
-            document.getElementById('quizWord').textContent = word.english;
-            document.getElementById('answerInput').value = '';
-            document.getElementById('feedback').classList.add('hidden');
-            document.getElementById('answerInput').focus();
-            
-            updateProgress('quiz');
-        }
-
-        function checkAnswer() {
-            const userAnswer = document.getElementById('answerInput').value.trim().toLowerCase();
-            const correctAnswer = wrongWords[currentIndex].vietnamese.toLowerCase();
-            const feedback = document.getElementById('feedback');
-            
-            if (!userAnswer) {
-                feedback.className = 'feedback incorrect';
-                feedback.textContent = '⚠️ Vui lòng nhập câu trả lời!';
-                feedback.classList.remove('hidden');
-                return;
-            }
-
-            if (userAnswer === correctAnswer) {
-                feedback.className = 'feedback correct';
-                feedback.textContent = '✅ Chính xác! Tuyệt vời!';
-                feedback.classList.remove('hidden');
-                
-                const word = wrongWords[currentIndex];
-                word.learned = true;
-                wrongWords.splice(currentIndex, 1);
-                
-                if (currentIndex >= wrongWords.length) {
-                    currentIndex = 0;
-                }
-                
-                updateStats();
-                saveProgress(); // Tự động lưu tiến độ
-                
-                setTimeout(() => {
-                    showQuiz();
-                }, 1500);
-            } else {
-                feedback.className = 'feedback incorrect';
-                feedback.textContent = `❌ Sai rồi! Đáp án đúng là: "${wrongWords[currentIndex].vietnamese}"`;
-                feedback.classList.remove('hidden');
-                
-                currentIndex = (currentIndex + 1) % wrongWords.length;
-                
-                setTimeout(() => {
-                    showQuiz();
-                }, 2500);
-            }
-        }
-
-        document.getElementById('answerInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkAnswer();
-            }
-        });
-
-        function updateProgress(mode) {
-            const total = vocabulary.length;
-            const remaining = wrongWords.length;
-            const learned = total - remaining;
-            const percent = (learned / total) * 100;
-            
-            const progressId = mode === 'flashcard' ? 'flashcardProgress' : 'quizProgress';
-            document.getElementById(progressId).style.width = percent + '%';
-        }
-
-        function backToMode() {
-            document.getElementById('flashcardSection').classList.add('hidden');
-            document.getElementById('quizSection').classList.add('hidden');
-            document.getElementById('modeSection').classList.remove('hidden');
-            updateStats();
-        }
-
-        function resetData() {
-            console.log('resetData called');
-            document.getElementById('confirmModal').classList.add('show');
-        }
-
-        function cancelReset() {
-            document.getElementById('confirmModal').classList.remove('show');
-        }
-
-        function confirmReset() {
-            vocabulary = [];
-            wrongWords = [];
-            currentIndex = 0;
-            document.getElementById('fileInput').value = '';
-            document.getElementById('fileInfo').textContent = '';
-            document.getElementById('confirmModal').classList.remove('show');
-            document.getElementById('modeSection').classList.add('hidden');
-            document.getElementById('flashcardSection').classList.add('hidden');
-            document.getElementById('quizSection').classList.add('hidden');
-            document.getElementById('importSection').classList.remove('hidden');
-            
-            showNotification('✅ Đã xóa dữ liệu thành công! Vui lòng tải file mới.');
-        }
-
-        function shuffleWords() {
-            // Thuật toán Fisher-Yates để xáo trộn mảng
-            for (let i = wrongWords.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [wrongWords[i], wrongWords[j]] = [wrongWords[j], wrongWords[i]];
-            }
-            currentIndex = 0;
-            
-            showNotification('🔀 Đã xáo trộn thứ tự từ vựng!');
-        }
-
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 25px; font-weight: 600; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.transition = 'opacity 0.3s ease';
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
-            }, 2000);
-        }
-
-        // Lưu tiến độ vào memory (sessionStorage không dùng được trong Claude.ai)
-        let savedProgressData = null;
-
-        function saveProgress() {
-            if (!autoSaveEnabled || vocabulary.length === 0) return;
-            
-            savedProgressData = {
-                vocabulary: vocabulary,
-                wrongWords: wrongWords,
-                currentIndex: currentIndex,
-                timestamp: new Date().toISOString()
-            };
-            console.log('Progress saved:', savedProgressData);
-        }
-
-        function restoreProgress() {
-            if (savedProgressData && savedProgressData.vocabulary.length > 0) {
-                vocabulary = savedProgressData.vocabulary;
-                wrongWords = savedProgressData.wrongWords;
-                currentIndex = savedProgressData.currentIndex;
-                
-                document.getElementById('importSection').classList.add('hidden');
-                document.getElementById('modeSection').classList.remove('hidden');
-                updateStats();
-                showNotification('📂 Đã khôi phục tiến độ học trước đó!');
-            }
-        }
-
         function exportProgress() {
-            if (vocabulary.length === 0) {
-                showNotification('⚠️ Chưa có dữ liệu để xuất!');
-                return;
-            }
-
-            const data = {
-                vocabulary: vocabulary,
-                wrongWords: wrongWords,
-                currentIndex: currentIndex,
-                exportDate: new Date().toISOString()
-            };
-
+            if (!vocabulary.length) { notify('⚠️ Chưa có dữ liệu để xuất!'); return; }
+            const data = { vocabulary, wrongWords, currentIndex, exportDate: new Date().toISOString() };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `vocabulary_progress_${new Date().getTime()}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showNotification('💾 Đã xuất tiến độ thành công!');
+            const a = document.createElement('a'); a.href = url; a.download = `vocab_progress_${Date.now()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            notify('💾 Đã xuất tiến độ!');
         }
 
-        function importProgress(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
+        function importProgress(e) {
+            const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader();
+            reader.onload = (ev) => {
                 try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    if (!data.vocabulary || !Array.isArray(data.vocabulary)) {
-                        showNotification('❌ File không đúng định dạng!');
-                        return;
-                    }
-
-                    vocabulary = data.vocabulary;
-                    wrongWords = data.wrongWords || [...vocabulary];
-                    currentIndex = data.currentIndex || 0;
-                    
-                    document.getElementById('importSection').classList.add('hidden');
-                    document.getElementById('modeSection').classList.remove('hidden');
-                    updateStats();
-                    saveProgress();
-                    
-                    showNotification('📥 Đã nhập tiến độ thành công!');
-                } catch (error) {
-                    showNotification('❌ Lỗi khi đọc file!');
-                    console.error(error);
-                }
+                    const data = JSON.parse(ev.target.result);
+                    if (!Array.isArray(data.vocabulary)) throw new Error('bad');
+                    vocabulary = data.vocabulary; wrongWords = data.wrongWords || [...vocabulary]; currentIndex = data.currentIndex || 0;
+                    qs('#importSection').classList.add('hidden'); qs('#modeSection').classList.remove('hidden'); updateStats(); saveProgress();
+                    notify('📥 Đã nhập tiến độ thành công!');
+                } catch (err) { notify('❌ File không đúng định dạng!'); }
             };
-            reader.readAsText(file);
-            
-            // Reset input để có thể import cùng file nhiều lần
-            event.target.value = '';
+            reader.readAsText(file); e.target.value = '';
         }
+
+        // =====================
+        // Stats & Progress
+        // =====================
+        function updateStats() {
+            const total = vocabulary.length; const remaining = wrongWords.length; const learned = total - remaining;
+            qs('#statsTotal').textContent = total; qs('#statsLearned').textContent = learned; qs('#statsRemaining').textContent = remaining;
+        }
+        function updateProgressBar(mode) {
+            const total = vocabulary.length || 1; const remaining = wrongWords.length; const learned = total - remaining; const pct = clamp(Math.round((learned / total) * 100), 0, 100);
+            const id = mode === 'quiz' ? '#quizProgress' : mode === 'fillblanks' ? '#fillBlanksProgress' : mode === 'mc' ? '#multipleChoiceProgress' : '#flashcardProgress';
+            qs(id).style.width = pct + '%';
+        }
+
+        // =====================
+        // Mode Switch
+        // =====================
+        function backToMode() { ['#flashcardSection', '#quizSection', '#fillBlanksSection', '#multipleChoiceSection'].forEach(s => qs(s).classList.add('hidden')); qs('#modeSection').classList.remove('hidden'); updateStats(); }
+        function shuffleWords() { for (let i = wrongWords.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[wrongWords[i], wrongWords[j]] = [wrongWords[j], wrongWords[i]]; } currentIndex = 0; notify('🔀 Đã xáo trộn từ vựng!'); }
+        function resetData() { qs('#confirmModal').classList.add('show'); }
+        function cancelReset() { qs('#confirmModal').classList.remove('show'); }
+        function confirmReset() { vocabulary = []; wrongWords = []; currentIndex = 0; qs('#fileInput').value = ''; qs('#fileInfo').textContent = ''; qs('#confirmModal').classList.remove('show'); backToMode(); qs('#modeSection').classList.add('hidden'); qs('#importSection').classList.remove('hidden'); localStorage.removeItem('vocab_progress'); notify('✅ Đã xóa dữ liệu! Hãy tải file mới.'); }
+
+        // =====================
+        // Flashcard
+        // =====================
+        function startFlashcard() { if (!wrongWords.length) return alertDone(); currentMode = 'flashcard'; currentIndex = 0; qs('#modeSection').classList.add('hidden'); qs('#flashcardSection').classList.remove('hidden'); showFlashcard(); }
+        function showFlashcard() { if (!wrongWords.length) return alertDone(true); isFlipped = false; qs('#flashcardInner').classList.remove('flipped'); const w = wrongWords[currentIndex]; qs('#flashcardFront').textContent = w.english; qs('#flashcardBack').textContent = w.vietnamese; updateProgressBar('flashcard'); }
+        function flipCard() { isFlipped = !isFlipped; qs('#flashcardInner').classList.toggle('flipped', isFlipped); }
+        function markAsCorrect() { const w = wrongWords[currentIndex]; w.learned = true; wrongWords.splice(currentIndex, 1); if (currentIndex >= wrongWords.length) currentIndex = 0; isFlipped = false; qs('#flashcardInner').classList.remove('flipped'); updateStats(); saveProgress(); setTimeout(showFlashcard, 250); }
+        function markAsWrong() { isFlipped = false; qs('#flashcardInner').classList.remove('flipped'); currentIndex = (currentIndex + 1) % wrongWords.length; setTimeout(showFlashcard, 200); }
+
+        // =====================
+        // Typing Quiz (EN -> VI)
+        // =====================
+        function startQuiz() { if (!wrongWords.length) return alertDone(); currentMode = 'quiz'; currentIndex = 0; qs('#modeSection').classList.add('hidden'); qs('#quizSection').classList.remove('hidden'); showQuiz(); }
+        function showQuiz() { if (!wrongWords.length) return alertDone(true); const w = wrongWords[currentIndex]; qs('#quizWord').textContent = w.english; qs('#answerInput').value = ''; qs('#feedback').classList.add('hidden'); qs('#answerInput').focus(); updateProgressBar('quiz'); }
+        function checkAnswer() { const user = qs('#answerInput').value.trim().toLowerCase().replace(/\s+/g, ' '); const correct = wrongWords[currentIndex].vietnamese.toLowerCase().trim().replace(/\s+/g, ' '); const fb = qs('#feedback'); if (!user) { fb.className = 'feedback incorrect'; fb.textContent = '⚠️ Vui lòng nhập câu trả lời!'; fb.classList.remove('hidden'); return; } if (user === correct) { fb.className = 'feedback correct'; fb.textContent = '✅ Chính xác!'; fb.classList.remove('hidden'); const w = wrongWords[currentIndex]; w.learned = true; wrongWords.splice(currentIndex, 1); if (currentIndex >= wrongWords.length) currentIndex = 0; updateStats(); saveProgress(); setTimeout(showQuiz, 900); } else { fb.className = 'feedback incorrect'; fb.textContent = `❌ Sai rồi! Đáp án đúng: "${wrongWords[currentIndex].vietnamese}"`; fb.classList.remove('hidden'); currentIndex = (currentIndex + 1) % wrongWords.length; setTimeout(showQuiz, 1400); } }
+        qs('#answerInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkAnswer(); });
+
+        // =====================
+        // Fill in the Blanks (VI -> EN)
+        // =====================
+        let fillBlanksData = null; // { word, inputs }
+
+        function startFillBlanks() {
+            if (!wrongWords.length) return alertDone();
+            currentMode = 'fillblanks';
+            currentIndex = 0;
+            qs('#modeSection').classList.add('hidden');
+            qs('#fillBlanksSection').classList.remove('hidden');
+            showFillBlanks();
+        }
+
+        function buildPattern(word) {
+            // Only count letters; keep spaces/punctuation revealed
+            const chars = [...word];
+            const letterIdx = chars.map((c, i) => isLetter(c) ? i : -1).filter(i => i !== -1);
+            const reveal = new Set();
+            if (letterIdx.length) { reveal.add(letterIdx[0]); }
+            const extra = Math.min(2, Math.max(1, Math.floor(letterIdx.length / 3)));
+            while (reveal.size < Math.min(letterIdx.length, 1 + extra)) {
+                reveal.add(letterIdx[Math.floor(Math.random() * letterIdx.length)]);
+            }
+            if (reveal.size === letterIdx.length && letterIdx.length) {
+                const arr = Array.from(reveal); reveal.delete(arr[Math.floor(Math.random() * arr.length)]);
+            }
+            return { reveal };
+        }
+
+        function showFillBlanks() {
+            if (!wrongWords.length) return alertDone(true);
+            const w = wrongWords[currentIndex];
+            const en = w.english;
+            const { reveal } = buildPattern(en);
+
+            qs('#fillBlanksVietnamese').textContent = w.vietnamese;
+            const container = qs('#fillBlanksContainer');
+            container.innerHTML = '';
+            qs('#fillBlanksFeedback').classList.add('hidden');
+
+            const inputs = [];
+            [...en].forEach((ch, i) => {
+                if (!isLetter(ch)) {
+                    const gap = document.createElement('div');
+                    gap.className = 'letter-box gap';
+                    gap.textContent = (ch === ' ') ? '' : ch;
+                    container.appendChild(gap);
+                    return;
+                }
+                if (reveal.has(i)) {
+                    const shown = document.createElement('div');
+                    shown.className = 'letter-box';
+                    shown.textContent = ch.toUpperCase();
+                    container.appendChild(shown);
+                    return;
+                }
+                const box = document.createElement('div');
+                box.className = 'letter-box blank';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.dataset.index = String(i); // map tới vị trí thật trong từ gốc
+                input.autocapitalize = 'none';
+                input.autocomplete = 'off';
+                input.spellcheck = false;
+                input.addEventListener('input', (e) => {
+                    // chỉ nhận chữ cái, tự chuyển HOA để nhìn rõ
+                    let v = e.target.value.replace(/[^a-z]/ig, '');
+                    if (v) {
+                        e.target.value = v.slice(-1).toUpperCase();
+                        const list = qsa('input', container);
+                        const idx = list.indexOf(e.target);
+                        if (idx > -1 && idx < list.length - 1) { list[idx + 1].focus(); list[idx + 1].select?.(); }
+                    }
+                });
+                input.addEventListener('keydown', (e) => {
+                    const list = qsa('input', container);
+                    const idx = list.indexOf(e.target);
+                    if (e.key === 'Backspace' && !e.target.value && idx > 0) { e.preventDefault(); list[idx - 1].focus(); list[idx - 1].value = ''; }
+                    if (e.key === 'ArrowRight' && idx < list.length - 1) { e.preventDefault(); list[idx + 1].focus(); }
+                    if (e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); list[idx - 1].focus(); }
+                    if (e.key === 'Enter') { e.preventDefault(); checkFillBlanks(); }
+                });
+                box.appendChild(input);
+                container.appendChild(box);
+                inputs.push(input);
+            });
+
+            fillBlanksData = { word: en, inputs };
+            if (inputs.length) { inputs[0].focus(); }
+            updateProgressBar('fillblanks');
+        }
+
+        function resetFillBlanks() {
+            if (!fillBlanksData) return;
+            fillBlanksData.inputs.forEach(i => { i.value = ''; i.classList.remove('error'); });
+            fillBlanksData.inputs[0]?.focus();
+            qs('#fillBlanksFeedback').classList.add('hidden');
+        }
+
+        function checkFillBlanks() {
+            if (!fillBlanksData) return;
+            const { word, inputs } = fillBlanksData;
+            let ok = true;
+            inputs.forEach(input => {
+                const idx = Number(input.dataset.index);
+                const u = (input.value || '').toLowerCase();
+                const c = (word[idx] || '').toLowerCase();
+                if (u !== c) { ok = false; }
+            });
+
+            const fb = qs('#fillBlanksFeedback');
+            if (ok) {
+                fb.className = 'feedback correct';
+                fb.textContent = '✅ Chính xác! Tuyệt vời!';
+                fb.classList.remove('hidden');
+                const w = wrongWords[currentIndex];
+                w.learned = true;
+                wrongWords.splice(currentIndex, 1);
+                if (currentIndex >= wrongWords.length) currentIndex = 0;
+                updateStats();
+                saveProgress();
+                setTimeout(showFillBlanks, 900);
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.textContent = `❌ Sai rồi! Đáp án đúng là: "${word}"`;
+                fb.classList.remove('hidden');
+                currentIndex = (currentIndex + 1) % wrongWords.length;
+                setTimeout(showFillBlanks, 1400);
+            }
+        }
+
+        // =====================
+        // Multiple Choice (EN -> VI)
+        // =====================
+        let mcLocked = false;
+        function startMultipleChoice() { if (!wrongWords.length) return alertDone(); currentMode = 'mc'; currentIndex = 0; qs('#modeSection').classList.add('hidden'); qs('#multipleChoiceSection').classList.remove('hidden'); showMultipleChoice(); }
+
+        function showMultipleChoice() {
+            if (!wrongWords.length) return alertDone(true); mcLocked = false; const w = wrongWords[currentIndex]; const correct = w.vietnamese; qs('#mcWord').textContent = w.english; qs('#mcFeedback').classList.add('hidden');
+            // pick 3 wrong options
+            const pool = vocabulary.filter(x => x.vietnamese !== correct);
+            const wrong = new Set();
+            while (wrong.size < Math.min(3, pool.length)) {
+                wrong.add(pool[Math.floor(Math.random() * pool.length)].vietnamese);
+            }
+            const opts = [correct, ...Array.from(wrong)];
+            // shuffle
+            for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[opts[i], opts[j]] = [opts[j], opts[i]]; }
+            const box = qs('#mcOptions'); box.innerHTML = '';
+            opts.forEach(opt => {
+                const el = document.createElement('div'); el.className = 'mc-option'; el.textContent = opt; el.onclick = () => selectMC(opt, correct, el); box.appendChild(el);
+            });
+            updateProgressBar('mc');
+        }
+
+        function selectMC(sel, correct, el) { if (mcLocked) return; mcLocked = true; const fb = qs('#mcFeedback'); if (sel === correct) { el.classList.add('correct'); fb.className = 'feedback correct'; fb.textContent = '✅ Chính xác!'; fb.classList.remove('hidden'); const w = wrongWords[currentIndex]; w.learned = true; wrongWords.splice(currentIndex, 1); if (currentIndex >= wrongWords.length) currentIndex = 0; updateStats(); saveProgress(); setTimeout(showMultipleChoice, 900); } else { el.classList.add('incorrect'); qsa('.mc-option').forEach(o => { if (o.textContent === correct) o.classList.add('correct'); }); fb.className = 'feedback incorrect'; fb.textContent = `❌ Sai rồi! Đáp án đúng là: "${correct}"`; fb.classList.remove('hidden'); currentIndex = (currentIndex + 1) % wrongWords.length; setTimeout(showMultipleChoice, 1400); } }
+
+        // =====================
+        // Misc
+        // =====================
+        function alertDone(back = false) { alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ vựng!'); if (back) backToMode(); }
+
+        // expose handlers for inline HTML attrs
+        window.startFlashcard = startFlashcard;
+        window.startQuiz = startQuiz;
+        window.startFillBlanks = startFillBlanks;
+        window.startMultipleChoice = startMultipleChoice;
+        window.flipCard = flipCard;
+        window.markAsCorrect = markAsCorrect;
+        window.markAsWrong = markAsWrong;
+        window.checkAnswer = checkAnswer;
+        window.resetData = resetData;
+        window.cancelReset = cancelReset;
+        window.confirmReset = confirmReset;
+        window.shuffleWords = shuffleWords;
+        window.exportProgress = exportProgress;
+        window.importProgress = importProgress;
+        window.backToMode = backToMode;
+        window.checkFillBlanks = checkFillBlanks;
+        window.resetFillBlanks = resetFillBlanks;
     </script>
 </body>
+
 </html>
