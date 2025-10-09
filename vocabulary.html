@@ -255,6 +255,50 @@
             margin-bottom: 20px;
             font-size: 14px;
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-box h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .modal-box p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -282,8 +326,26 @@
                 <button class="btn btn-primary" onclick="startFlashcard()">🃏 Flashcard</button>
                 <button class="btn btn-success" onclick="startQuiz()">✍️ Quiz</button>
             </div>
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn btn-danger" onclick="resetData()">🔄 Xóa & Tải File Mới</button>
+            <div style="text-align: center; margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="shuffleWords()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🔀 Xáo Trộn</button>
+                <button class="btn btn-success" onclick="exportProgress()">💾 Xuất Tiến Độ</button>
+                <button class="btn btn-primary" onclick="document.getElementById('importProgress').click()">📥 Nhập Tiến Độ</button>
+                <button class="btn" onclick="resetData()" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white;">🔄 Xóa & Tải File Mới</button>
+                <input type="file" id="importProgress" accept=".json" style="display: none;" onchange="importProgress(event)">
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalWords">0</div>
+                    <div class="stat-label">Tổng từ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="learnedWords">0</div>
+                    <div class="stat-label">Đã học</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="remainingWords">0</div>
+                    <div class="stat-label">Còn lại</div>
+                </div>
             </div>
             <div class="stats">
                 <div class="stat-item">
@@ -342,6 +404,18 @@
                 <button class="btn btn-primary" onclick="backToMode()">🔙 Quay Lại</button>
             </div>
         </div>
+
+        <!-- Modal xác nhận xóa -->
+        <div id="confirmModal" class="modal-overlay">
+            <div class="modal-box">
+                <h3>⚠️ Xác nhận xóa</h3>
+                <p>Bạn có chắc muốn xóa dữ liệu hiện tại và tải file mới?</p>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary" onclick="cancelReset()">Hủy</button>
+                    <button class="btn" onclick="confirmReset()" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white;">Xóa</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -350,6 +424,21 @@
         let currentIndex = 0;
         let currentMode = '';
         let isFlipped = false;
+        let autoSaveEnabled = true;
+
+        // Tự động khôi phục tiến độ khi load trang
+        window.addEventListener('load', function() {
+            restoreProgress();
+        });
+
+        // Cảnh báo trước khi tắt trang
+        window.addEventListener('beforeunload', function(e) {
+            if (vocabulary.length > 0 && wrongWords.length > 0) {
+                saveProgress(); // Tự động lưu
+                e.preventDefault();
+                e.returnValue = 'Bạn có tiến độ học chưa hoàn thành. Bạn có chắc muốn thoát?';
+            }
+        });
 
         document.getElementById('fileInput').addEventListener('change', handleFile);
 
@@ -381,6 +470,7 @@
                 document.getElementById('importSection').classList.add('hidden');
                 document.getElementById('modeSection').classList.remove('hidden');
                 updateStats();
+                saveProgress(); // Tự động lưu sau khi import
             };
             reader.readAsArrayBuffer(file);
         }
@@ -450,6 +540,7 @@
             card.classList.remove('flipped');
             
             updateStats();
+            saveProgress(); // Tự động lưu tiến độ
             
             // Đợi animation hoàn thành rồi mới hiển thị từ mới
             setTimeout(() => {
@@ -525,6 +616,7 @@
                 }
                 
                 updateStats();
+                saveProgress(); // Tự động lưu tiến độ
                 
                 setTimeout(() => {
                     showQuiz();
@@ -566,17 +658,140 @@
         }
 
         function resetData() {
-            if (confirm('⚠️ Bạn có chắc muốn xóa dữ liệu hiện tại và tải file mới?')) {
-                vocabulary = [];
-                wrongWords = [];
-                currentIndex = 0;
-                document.getElementById('fileInput').value = '';
-                document.getElementById('fileInfo').textContent = '';
-                document.getElementById('modeSection').classList.add('hidden');
-                document.getElementById('flashcardSection').classList.add('hidden');
-                document.getElementById('quizSection').classList.add('hidden');
-                document.getElementById('importSection').classList.remove('hidden');
+            console.log('resetData called');
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        function cancelReset() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        function confirmReset() {
+            vocabulary = [];
+            wrongWords = [];
+            currentIndex = 0;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').textContent = '';
+            document.getElementById('confirmModal').classList.remove('show');
+            document.getElementById('modeSection').classList.add('hidden');
+            document.getElementById('flashcardSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('importSection').classList.remove('hidden');
+            
+            showNotification('✅ Đã xóa dữ liệu thành công! Vui lòng tải file mới.');
+        }
+
+        function shuffleWords() {
+            // Thuật toán Fisher-Yates để xáo trộn mảng
+            for (let i = wrongWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wrongWords[i], wrongWords[j]] = [wrongWords[j], wrongWords[i]];
             }
+            currentIndex = 0;
+            
+            showNotification('🔀 Đã xáo trộn thứ tự từ vựng!');
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border-radius: 25px; font-weight: 600; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transition = 'opacity 0.3s ease';
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // Lưu tiến độ vào memory (sessionStorage không dùng được trong Claude.ai)
+        let savedProgressData = null;
+
+        function saveProgress() {
+            if (!autoSaveEnabled || vocabulary.length === 0) return;
+            
+            savedProgressData = {
+                vocabulary: vocabulary,
+                wrongWords: wrongWords,
+                currentIndex: currentIndex,
+                timestamp: new Date().toISOString()
+            };
+            console.log('Progress saved:', savedProgressData);
+        }
+
+        function restoreProgress() {
+            if (savedProgressData && savedProgressData.vocabulary.length > 0) {
+                vocabulary = savedProgressData.vocabulary;
+                wrongWords = savedProgressData.wrongWords;
+                currentIndex = savedProgressData.currentIndex;
+                
+                document.getElementById('importSection').classList.add('hidden');
+                document.getElementById('modeSection').classList.remove('hidden');
+                updateStats();
+                showNotification('📂 Đã khôi phục tiến độ học trước đó!');
+            }
+        }
+
+        function exportProgress() {
+            if (vocabulary.length === 0) {
+                showNotification('⚠️ Chưa có dữ liệu để xuất!');
+                return;
+            }
+
+            const data = {
+                vocabulary: vocabulary,
+                wrongWords: wrongWords,
+                currentIndex: currentIndex,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vocabulary_progress_${new Date().getTime()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('💾 Đã xuất tiến độ thành công!');
+        }
+
+        function importProgress(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.vocabulary || !Array.isArray(data.vocabulary)) {
+                        showNotification('❌ File không đúng định dạng!');
+                        return;
+                    }
+
+                    vocabulary = data.vocabulary;
+                    wrongWords = data.wrongWords || [...vocabulary];
+                    currentIndex = data.currentIndex || 0;
+                    
+                    document.getElementById('importSection').classList.add('hidden');
+                    document.getElementById('modeSection').classList.remove('hidden');
+                    updateStats();
+                    saveProgress();
+                    
+                    showNotification('📥 Đã nhập tiến độ thành công!');
+                } catch (error) {
+                    showNotification('❌ Lỗi khi đọc file!');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset input để có thể import cùng file nhiều lần
+            event.target.value = '';
         }
     </script>
 </body>
