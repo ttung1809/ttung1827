@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học Từ Vựng</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .import-section {
+            text-align: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(56, 239, 125, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .flashcard {
+            perspective: 1000px;
+            height: 350px;
+            margin-bottom: 20px;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flashcard-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .flashcard-front {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .quiz-section {
+            text-align: center;
+        }
+
+        .quiz-word {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+            transition: width 0.3s ease;
+        }
+
+        .instruction {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Học Từ Vựng</h1>
+            <p>Học nhanh, nhớ lâu với flashcard và quiz</p>
+        </div>
+
+        <div class="card import-section" id="importSection">
+            <h2 style="margin-bottom: 20px; color: #333;">Nhập Danh Sách Từ Vựng</h2>
+            <p class="instruction">
+                File Excel cần có 2 cột: Cột A (Tiếng Anh) và Cột B (Tiếng Việt)
+            </p>
+            <div class="file-input-wrapper">
+                <button class="btn btn-primary">📁 Chọn File Excel</button>
+                <input type="file" id="fileInput" accept=".xlsx, .xls">
+            </div>
+            <div id="fileInfo" style="color: #28a745; margin-top: 10px;"></div>
+        </div>
+
+        <div class="card hidden" id="modeSection">
+            <h2 style="margin-bottom: 20px; text-align: center; color: #333;">Chọn Chế Độ Học</h2>
+            <div class="mode-selector">
+                <button class="btn btn-primary" onclick="startFlashcard()">🃏 Flashcard</button>
+                <button class="btn btn-success" onclick="startQuiz()">✍️ Quiz</button>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalWords">0</div>
+                    <div class="stat-label">Tổng từ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="learnedWords">0</div>
+                    <div class="stat-label">Đã học</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="remainingWords">0</div>
+                    <div class="stat-label">Còn lại</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card hidden" id="flashcardSection">
+            <h2 style="margin-bottom: 20px; text-align: center; color: #333;">🃏 Flashcard</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="flashcardProgress"></div>
+            </div>
+            <p class="instruction">Nhấn vào thẻ để lật và xem nghĩa</p>
+            <div class="flashcard" onclick="flipCard()">
+                <div class="flashcard-inner" id="flashcardInner">
+                    <div class="flashcard-front" id="flashcardFront">
+                        Click to start
+                    </div>
+                    <div class="flashcard-back" id="flashcardBack">
+                        Nghĩa tiếng Việt
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-danger" onclick="markAsWrong()">❌ Chưa Nhớ</button>
+                <button class="btn btn-success" onclick="markAsCorrect()">✅ Đã Nhớ</button>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="backToMode()">🔙 Quay Lại</button>
+            </div>
+        </div>
+
+        <div class="card hidden" id="quizSection">
+            <h2 style="margin-bottom: 20px; text-align: center; color: #333;">✍️ Quiz</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="quizProgress"></div>
+            </div>
+            <p class="instruction">Nhập nghĩa tiếng Việt của từ dưới đây</p>
+            <div class="quiz-word" id="quizWord">Word</div>
+            <input type="text" class="answer-input" id="answerInput" placeholder="Nhập nghĩa tiếng Việt...">
+            <div class="controls">
+                <button class="btn btn-success" onclick="checkAnswer()">Kiểm Tra</button>
+            </div>
+            <div id="feedback" class="feedback hidden"></div>
+            <div class="controls" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="backToMode()">🔙 Quay Lại</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let vocabulary = [];
+        let wrongWords = [];
+        let currentIndex = 0;
+        let currentMode = '';
+        let isFlipped = false;
+
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                
+                vocabulary = [];
+                for (let i = 0; i < jsonData.length; i++) {
+                    if (jsonData[i][0] && jsonData[i][1]) {
+                        vocabulary.push({
+                            english: jsonData[i][0].toString().trim(),
+                            vietnamese: jsonData[i][1].toString().trim(),
+                            learned: false
+                        });
+                    }
+                }
+
+                wrongWords = [...vocabulary];
+                
+                document.getElementById('fileInfo').textContent = `✅ Đã tải ${vocabulary.length} từ vựng`;
+                document.getElementById('importSection').classList.add('hidden');
+                document.getElementById('modeSection').classList.remove('hidden');
+                updateStats();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function updateStats() {
+            const learned = vocabulary.filter(w => w.learned).length;
+            const total = vocabulary.length;
+            const remaining = wrongWords.length;
+            
+            document.getElementById('totalWords').textContent = total;
+            document.getElementById('learnedWords').textContent = learned;
+            document.getElementById('remainingWords').textContent = remaining;
+        }
+
+        function startFlashcard() {
+            if (wrongWords.length === 0) {
+                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ vựng!');
+                return;
+            }
+            currentMode = 'flashcard';
+            currentIndex = 0;
+            document.getElementById('modeSection').classList.add('hidden');
+            document.getElementById('flashcardSection').classList.remove('hidden');
+            showFlashcard();
+        }
+
+        function showFlashcard() {
+            if (wrongWords.length === 0) {
+                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ!');
+                backToMode();
+                return;
+            }
+
+            isFlipped = false;
+            const card = document.getElementById('flashcardInner');
+            card.classList.remove('flipped');
+            
+            const word = wrongWords[currentIndex];
+            document.getElementById('flashcardFront').textContent = word.english;
+            document.getElementById('flashcardBack').textContent = word.vietnamese;
+            
+            updateProgress('flashcard');
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            const card = document.getElementById('flashcardInner');
+            if (isFlipped) {
+                card.classList.add('flipped');
+            } else {
+                card.classList.remove('flipped');
+            }
+        }
+
+        function markAsCorrect() {
+            const word = wrongWords[currentIndex];
+            word.learned = true;
+            wrongWords.splice(currentIndex, 1);
+            
+            if (currentIndex >= wrongWords.length) {
+                currentIndex = 0;
+            }
+            
+            updateStats();
+            showFlashcard();
+        }
+
+        function markAsWrong() {
+            currentIndex = (currentIndex + 1) % wrongWords.length;
+            showFlashcard();
+        }
+
+        function startQuiz() {
+            if (wrongWords.length === 0) {
+                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ vựng!');
+                return;
+            }
+            currentMode = 'quiz';
+            currentIndex = 0;
+            document.getElementById('modeSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.remove('hidden');
+            showQuiz();
+        }
+
+        function showQuiz() {
+            if (wrongWords.length === 0) {
+                alert('🎉 Chúc mừng! Bạn đã học hết tất cả từ!');
+                backToMode();
+                return;
+            }
+
+            const word = wrongWords[currentIndex];
+            document.getElementById('quizWord').textContent = word.english;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('answerInput').focus();
+            
+            updateProgress('quiz');
+        }
+
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim().toLowerCase();
+            const correctAnswer = wrongWords[currentIndex].vietnamese.toLowerCase();
+            const feedback = document.getElementById('feedback');
+            
+            if (!userAnswer) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Vui lòng nhập câu trả lời!';
+                feedback.classList.remove('hidden');
+                return;
+            }
+
+            if (userAnswer === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Chính xác! Tuyệt vời!';
+                feedback.classList.remove('hidden');
+                
+                const word = wrongWords[currentIndex];
+                word.learned = true;
+                wrongWords.splice(currentIndex, 1);
+                
+                if (currentIndex >= wrongWords.length) {
+                    currentIndex = 0;
+                }
+                
+                updateStats();
+                
+                setTimeout(() => {
+                    showQuiz();
+                }, 1500);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = `❌ Sai rồi! Đáp án đúng là: "${wrongWords[currentIndex].vietnamese}"`;
+                feedback.classList.remove('hidden');
+                
+                currentIndex = (currentIndex + 1) % wrongWords.length;
+                
+                setTimeout(() => {
+                    showQuiz();
+                }, 2500);
+            }
+        }
+
+        document.getElementById('answerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        function updateProgress(mode) {
+            const total = vocabulary.length;
+            const remaining = wrongWords.length;
+            const learned = total - remaining;
+            const percent = (learned / total) * 100;
+            
+            const progressId = mode === 'flashcard' ? 'flashcardProgress' : 'quizProgress';
+            document.getElementById(progressId).style.width = percent + '%';
+        }
+
+        function backToMode() {
+            document.getElementById('flashcardSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('modeSection').classList.remove('hidden');
+            updateStats();
+        }
+    </script>
+</body>
+</html>
