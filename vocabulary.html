@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>📚 Học Từ Vựng</title>
+    <title>📚 Học Từ Vựng (Clean)</title>
+    <!-- Thư viện đọc Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
@@ -351,39 +352,72 @@
         /* Multiple Choice */
         #mcOptions {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 15px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
         }
 
         .mc-option {
-            padding: 18px;
-            border: 3px solid #e0e0e0;
-            border-radius: 15px;
+            position: relative;
+            padding: 18px 16px 18px 56px;
+            border: 2px solid #e6e6f0;
+            border-radius: 16px;
+            background: #fff;
             font-size: 1.05em;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: white;
-            text-align: center;
-            user-select: none;
+            transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
         }
 
         .mc-option:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
             border-color: #667eea;
             background: #f8f9ff;
-            transform: translateY(-2px);
+        }
+
+        .mc-option .choice-letter {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #cfd2ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #667eea;
+            background: #fff;
+        }
+
+        .mc-option .choice-text {
+            display: block;
+            font-weight: 600;
+            line-height: 1.3;
         }
 
         .mc-option.correct {
             border-color: #28a745;
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #11998e, #38ef7d);
             color: white;
+            box-shadow: 0 10px 24px rgba(17, 153, 142, .35);
         }
 
         .mc-option.incorrect {
             border-color: #dc3545;
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            background: linear-gradient(135deg, #eb3349, #f45c43);
             color: white;
+            box-shadow: 0 10px 24px rgba(235, 51, 73, .25);
+        }
+
+        .mc-option.focused {
+            outline: 3px solid #a6b1ff;
+            outline-offset: 2px;
+            box-shadow: 0 8px 18px rgba(102, 126, 234, .25);
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -528,6 +562,7 @@
         </div>
     </div>
 
+    <!-- App Script -->
     <script>
         // =====================
         // State
@@ -537,6 +572,10 @@
         let currentIndex = 0;
         let currentMode = '';
         let isFlipped = false;
+        // Tránh TDZ
+        let mcLocked = false;
+        let mcFocusIndex = 0;
+        let fillBlanksData = null;
 
         // =====================
         // Helpers
@@ -545,6 +584,10 @@
         const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
         const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
         const isLetter = (ch) => /[a-z]/i.test(ch);
+        const normalizeStr = (s) => String(s).toLowerCase().normalize('NFC').trim().replace(/\s+/g, ' ');
+        const parseSynonyms = (vn) => String(vn).split(/[,;]/).map(s => normalizeStr(s)).filter(Boolean);
+        const rawSynonyms = (vn) => String(vn).split(/[,;]/).map(s => s.trim()).filter(Boolean);
+        const meaningsOverlap = (a, b) => { const A = parseSynonyms(a); const B = parseSynonyms(b); if (!A.length || !B.length) return normalizeStr(a) === normalizeStr(b); return A.some(x => B.includes(x)); };
 
         function notify(msg) {
             const el = document.createElement('div');
@@ -677,14 +720,43 @@
         // =====================
         function startQuiz() { if (!wrongWords.length) return alertDone(); currentMode = 'quiz'; currentIndex = 0; qs('#modeSection').classList.add('hidden'); qs('#quizSection').classList.remove('hidden'); showQuiz(); }
         function showQuiz() { if (!wrongWords.length) return alertDone(true); const w = wrongWords[currentIndex]; qs('#quizWord').textContent = w.english; qs('#answerInput').value = ''; qs('#feedback').classList.add('hidden'); qs('#answerInput').focus(); updateProgressBar('quiz'); }
-        function checkAnswer() { const user = qs('#answerInput').value.trim().toLowerCase().replace(/\s+/g, ' '); const correct = wrongWords[currentIndex].vietnamese.toLowerCase().trim().replace(/\s+/g, ' '); const fb = qs('#feedback'); if (!user) { fb.className = 'feedback incorrect'; fb.textContent = '⚠️ Vui lòng nhập câu trả lời!'; fb.classList.remove('hidden'); return; } if (user === correct) { fb.className = 'feedback correct'; fb.textContent = '✅ Chính xác!'; fb.classList.remove('hidden'); const w = wrongWords[currentIndex]; w.learned = true; wrongWords.splice(currentIndex, 1); if (currentIndex >= wrongWords.length) currentIndex = 0; updateStats(); saveProgress(); setTimeout(showQuiz, 900); } else { fb.className = 'feedback incorrect'; fb.textContent = `❌ Sai rồi! Đáp án đúng: "${wrongWords[currentIndex].vietnamese}"`; fb.classList.remove('hidden'); currentIndex = (currentIndex + 1) % wrongWords.length; setTimeout(showQuiz, 1400); } }
+        function checkAnswer() {
+            const fb = qs('#feedback');
+            const inputEl = qs('#answerInput');
+            const word = wrongWords[currentIndex];
+            const userRaw = inputEl.value;
+            if (!userRaw || !userRaw.trim()) {
+                fb.className = 'feedback incorrect';
+                fb.textContent = '⚠️ Vui lòng nhập câu trả lời!';
+                fb.classList.remove('hidden');
+                return;
+            }
+            const syns = parseSynonyms(word.vietnamese);
+            const ok = syns.length ? syns.includes(normalizeStr(userRaw)) : normalizeStr(userRaw) === normalizeStr(word.vietnamese);
+            if (ok) {
+                fb.className = 'feedback correct';
+                fb.textContent = '✅ Chính xác!';
+                fb.classList.remove('hidden');
+                const w = wrongWords[currentIndex];
+                w.learned = true;
+                wrongWords.splice(currentIndex, 1);
+                if (currentIndex >= wrongWords.length) currentIndex = 0;
+                updateStats(); saveProgress();
+                setTimeout(showQuiz, 900);
+            } else {
+                fb.className = 'feedback incorrect';
+                const showAns = rawSynonyms(word.vietnamese);
+                fb.textContent = `❌ Sai rồi! Đáp án đúng: "${showAns.join(' / ')}"`;
+                fb.classList.remove('hidden');
+                currentIndex = (currentIndex + 1) % wrongWords.length;
+                setTimeout(showQuiz, 1400);
+            }
+        }
         qs('#answerInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkAnswer(); });
 
         // =====================
         // Fill in the Blanks (VI -> EN)
         // =====================
-        let fillBlanksData = null; // { word, inputs }
-
         function startFillBlanks() {
             if (!wrongWords.length) return alertDone();
             currentMode = 'fillblanks';
@@ -816,28 +888,100 @@
         // =====================
         // Multiple Choice (EN -> VI)
         // =====================
-        let mcLocked = false;
-        function startMultipleChoice() { if (!wrongWords.length) return alertDone(); currentMode = 'mc'; currentIndex = 0; qs('#modeSection').classList.add('hidden'); qs('#multipleChoiceSection').classList.remove('hidden'); showMultipleChoice(); }
-
-        function showMultipleChoice() {
-            if (!wrongWords.length) return alertDone(true); mcLocked = false; const w = wrongWords[currentIndex]; const correct = w.vietnamese; qs('#mcWord').textContent = w.english; qs('#mcFeedback').classList.add('hidden');
-            // pick 3 wrong options
-            const pool = vocabulary.filter(x => x.vietnamese !== correct);
-            const wrong = new Set();
-            while (wrong.size < Math.min(3, pool.length)) {
-                wrong.add(pool[Math.floor(Math.random() * pool.length)].vietnamese);
-            }
-            const opts = [correct, ...Array.from(wrong)];
-            // shuffle
-            for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[opts[i], opts[j]] = [opts[j], opts[i]]; }
-            const box = qs('#mcOptions'); box.innerHTML = '';
-            opts.forEach(opt => {
-                const el = document.createElement('div'); el.className = 'mc-option'; el.textContent = opt; el.onclick = () => selectMC(opt, correct, el); box.appendChild(el);
-            });
-            updateProgressBar('mc');
+        function focusMC(index) {
+            const opts = qsa('#mcOptions .mc-option');
+            if (!opts.length) return;
+            mcFocusIndex = ((index % opts.length) + opts.length) % opts.length;
+            opts.forEach(o => o.classList.remove('focused'));
+            const el = opts[mcFocusIndex];
+            el.classList.add('focused');
+            el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         }
 
-        function selectMC(sel, correct, el) { if (mcLocked) return; mcLocked = true; const fb = qs('#mcFeedback'); if (sel === correct) { el.classList.add('correct'); fb.className = 'feedback correct'; fb.textContent = '✅ Chính xác!'; fb.classList.remove('hidden'); const w = wrongWords[currentIndex]; w.learned = true; wrongWords.splice(currentIndex, 1); if (currentIndex >= wrongWords.length) currentIndex = 0; updateStats(); saveProgress(); setTimeout(showMultipleChoice, 900); } else { el.classList.add('incorrect'); qsa('.mc-option').forEach(o => { if (o.textContent === correct) o.classList.add('correct'); }); fb.className = 'feedback incorrect'; fb.textContent = `❌ Sai rồi! Đáp án đúng là: "${correct}"`; fb.classList.remove('hidden'); currentIndex = (currentIndex + 1) % wrongWords.length; setTimeout(showMultipleChoice, 1400); } }
+        function startMultipleChoice() {
+            if (!wrongWords.length) return alertDone();
+            currentMode = 'mc'; currentIndex = 0;
+            qs('#modeSection').classList.add('hidden');
+            qs('#multipleChoiceSection').classList.remove('hidden');
+            showMultipleChoice();
+        }
+
+        function showMultipleChoice() {
+            if (!wrongWords.length) return alertDone(true);
+            mcLocked = false;
+            const w = wrongWords[currentIndex];
+            const correctVN = w.vietnamese;
+            const correctSynRaw = rawSynonyms(correctVN);
+            const correctSynNorm = parseSynonyms(correctVN);
+            if (!correctSynNorm.length) { correctSynNorm.push(normalizeStr(correctVN)); correctSynRaw.push(String(correctVN).trim()); }
+
+            const displayCorrect = correctSynRaw[Math.floor(Math.random() * correctSynRaw.length)];
+
+            const pool = vocabulary.filter(x => !meaningsOverlap(x.vietnamese, correctVN));
+
+            const wrongTexts = [];
+            const used = new Set();
+            used.add(normalizeStr(displayCorrect));
+            while (wrongTexts.length < 3 && pool.length) {
+                const cand = pool[Math.floor(Math.random() * pool.length)];
+                const candRawSyns = rawSynonyms(cand.vietnamese);
+                const candidateText = candRawSyns[Math.floor(Math.random() * Math.max(1, candRawSyns.length))] || String(cand.vietnamese);
+                const key = normalizeStr(candidateText);
+                if (!used.has(key)) {
+                    used.add(key);
+                    wrongTexts.push(candidateText);
+                }
+            }
+
+            const options = [displayCorrect, ...wrongTexts];
+            for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[options[i], options[j]] = [options[j], options[i]]; }
+
+            qs('#mcWord').textContent = w.english;
+            qs('#mcFeedback').classList.add('hidden');
+            const box = qs('#mcOptions'); box.innerHTML = '';
+            const LETTERS = ['A', 'B', 'C', 'D'];
+            options.forEach((text, idx) => {
+                const el = document.createElement('div');
+                el.className = 'mc-option';
+                el.dataset.text = text;
+                el.dataset.index = String(idx);
+                el.tabIndex = 0;
+                el.innerHTML = `<span class="choice-letter">${LETTERS[idx] || ''}</span><span class="choice-text">${text}</span>`;
+                el.onclick = () => selectMC(text, correctVN, el);
+                box.appendChild(el);
+            });
+            updateProgressBar('mc');
+            focusMC(0);
+        }
+
+        function selectMC(selected, correctVN, el) {
+            if (mcLocked) return; mcLocked = true;
+            const fb = qs('#mcFeedback');
+            const corr = parseSynonyms(correctVN);
+            if (!corr.length) corr.push(normalizeStr(correctVN));
+            const ok = corr.includes(normalizeStr(selected));
+            if (ok) {
+                el.classList.add('correct');
+                fb.className = 'feedback correct';
+                fb.textContent = '✅ Chính xác!';
+                fb.classList.remove('hidden');
+                const w = wrongWords[currentIndex];
+                w.learned = true; wrongWords.splice(currentIndex, 1);
+                if (currentIndex >= wrongWords.length) currentIndex = 0;
+                updateStats(); saveProgress();
+                setTimeout(showMultipleChoice, 900);
+            } else {
+                el.classList.add('incorrect');
+                const all = qsa('.mc-option');
+                all.forEach(opt => { if (corr.includes(normalizeStr(opt.dataset.text))) opt.classList.add('correct'); });
+                fb.className = 'feedback incorrect';
+                const showAns = rawSynonyms(correctVN);
+                fb.textContent = `❌ Sai rồi! Đáp án đúng: "${showAns.join(' / ')}"`;
+                fb.classList.remove('hidden');
+                currentIndex = (currentIndex + 1) % wrongWords.length;
+                setTimeout(showMultipleChoice, 1400);
+            }
+        }
 
         // =====================
         // Misc
@@ -862,6 +1006,29 @@
         window.backToMode = backToMode;
         window.checkFillBlanks = checkFillBlanks;
         window.resetFillBlanks = resetFillBlanks;
+
+        // Global hotkeys: Enter to confirm, arrows/1-4/A-D to navigate MC
+        function onGlobalKey(e) {
+            if (currentMode === 'quiz') {
+                if (e.key === 'Enter') { e.preventDefault(); try { checkAnswer(); } catch (_) { } }
+            } else if (currentMode === 'fillblanks') {
+                if (e.key === 'Enter') { e.preventDefault(); try { checkFillBlanks(); } catch (_) { } }
+            } else if (currentMode === 'mc') {
+                const opts = qsa('#mcOptions .mc-option');
+                if (!opts.length) return;
+                const nextKeys = ['ArrowRight', 'ArrowDown', 'j', 'l'];
+                const prevKeys = ['ArrowLeft', 'ArrowUp', 'h', 'k'];
+                if (nextKeys.includes(e.key)) { e.preventDefault(); try { focusMC(mcFocusIndex + 1); } catch (_) { } }
+                if (prevKeys.includes(e.key)) { e.preventDefault(); try { focusMC(mcFocusIndex - 1); } catch (_) { } }
+                if (e.key === 'Enter') { e.preventDefault(); opts[mcFocusIndex]?.click(); }
+                const map = { '1': 0, '2': 1, '3': 2, '4': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+                const k = e.key?.toLowerCase?.();
+                if (k && (k in map)) {
+                    const i = map[k]; if (opts[i]) { e.preventDefault(); focusMC(i); opts[i].click(); }
+                }
+            }
+        }
+        document.addEventListener('keydown', onGlobalKey, false);
     </script>
 </body>
 
