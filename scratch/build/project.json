@@ -1,0 +1,68 @@
+{
+  "targets": [
+    {
+      "isStage": true,
+      "name": "Stage",
+      "variables": {},
+      "lists": {},
+      "broadcasts": {},
+      "blocks": {},
+      "currentCostume": 0,
+      "costumes": [
+        {
+          "assetId": "97d62d5e203948e816d1a2c781c3f467",
+          "name": "backdrop1",
+          "bitmapResolution": 1,
+          "md5ext": "97d62d5e203948e816d1a2c781c3f467.svg",
+          "dataFormat": "svg",
+          "rotationCenterX": 240,
+          "rotationCenterY": 180
+        }
+      ],
+      "sounds": [],
+      "volume": 100,
+      "layerOrder": 0,
+      "tempo": 60,
+      "videoTransparency": 50,
+      "videoState": "on",
+      "textToSpeechLanguage": null
+    },
+    {
+      "isStage": false,
+      "name": "Bug",
+      "variables": {},
+      "lists": {},
+      "broadcasts": {},
+      "blocks": {},
+      "currentCostume": 0,
+      "costumes": [
+        {
+          "assetId": "b17e4ada23d8382e64d2542e5e21881d",
+          "name": "bug",
+          "bitmapResolution": 1,
+          "md5ext": "b17e4ada23d8382e64d2542e5e21881d.svg",
+          "dataFormat": "svg",
+          "rotationCenterX": 50,
+          "rotationCenterY": 40
+        }
+      ],
+      "sounds": [],
+      "volume": 100,
+      "layerOrder": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "size": 100,
+      "direction": 90,
+      "draggable": false,
+      "rotationStyle": "all around"
+    }
+  ],
+  "monitors": [],
+  "extensions": [],
+  "meta": {
+    "semver": "3.0.0",
+    "vm": "0.2.0",
+    "agent": "cursor-gpt"
+  }
+}
